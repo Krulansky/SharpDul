@@ -1,10 +1,11 @@
-# #D - Design Brief
+# SharpDul - Design Brief
 
-**#D** (read "Sharp D") is a personal gamedev coach. It trains its owner mainly by
+**SharpDul** (short form **#Dul**) is a personal gamedev coach. It trains its owner mainly by
 **re-studying their own projects** - games built from tutorials, with an instructor or with
 AI - and grows with every finished project, like a skyscraper rising floor by floor on solid
-foundations. "#D" is a pun on C# and the owner's surname (Dulovic); **SharpD** is planned as
-the studio name on the owner's game licences.
+foundations. The name plays on C#, on the owner's surname (Dulovic) and on *sharp* as the
+opposite of *dull*. **SharpDul** is also planned as the studio name on the owner's game
+licences (check the Slovak business register and EU trademarks before registering).
 
 Status: design draft, 2026-10-25. Decisions below were made by the director in conversation;
 open questions are listed at the end.
@@ -13,7 +14,7 @@ open questions are listed at the end.
 
 1. **Remember what was built.** Spaced repetition over the lessons of real projects
    (LuaLander first), so knowledge does not fade after a project ends.
-2. **Learn C# in depth.** The app itself is written in C#; building #D is C# training too.
+2. **Learn C# in depth.** The app itself is written in C#; building SharpDul is C# training too.
 3. **See code affect gameplay.** Change a value or a line, watch the mechanic change live.
 4. **Play with the tools that come naturally** - particle effects first - and practise UI.
 5. **No pressure.** Daily or in bursts, never deadline-driven.
@@ -25,8 +26,8 @@ The director has an iPhone and Windows PCs (school + home), **no Mac**. A native
 
 | Part | Platform | Tech | Contents |
 |------|----------|------|----------|
-| **#D Pocket** | iPhone (and any browser) | Blazor WebAssembly **PWA**, C# | Quizzes, tests, spaced repetition, XP, Code Lab, small Mechanics Lab |
-| **#D Playground** | Windows PC | Unity `6000.3.14f1` project | Particle Lab, UI Lab, 3D models and animation, bigger mechanics |
+| **SharpDul Pocket** | iPhone (and any browser) | Blazor WebAssembly **PWA**, C# | Quizzes, tests, spaced repetition, XP, Code Lab, small Mechanics Lab |
+| **SharpDul Playground** | Windows PC | Unity `6000.3.14f1` project | Particle Lab, UI Lab, 3D models and animation, bigger mechanics |
 
 - A PWA is installed from Safari via *Share > Add to Home Screen*; it runs full-screen and
   offline. No App Store and no Apple fee.
@@ -95,7 +96,12 @@ The owner first; possibly shared with classmates later.
 
 ## Open questions
 
-- GitHub repo name (`#` is not allowed in repo names; proposed `SharpD`).
-- Storage backup: browser storage on iPhone can be lost (e.g. clearing Safari data) -
-  add export/import of progress? (proposed: yes, as a JSON file)
-- Visual identity: logo, colours, font.
+- Storage backup: browser storage on iPhone can be lost (e.g. clearing Safari data).
+  The director wants it "like the RESET 90 app" - how that app backs up is still to be
+  clarified.
+- Repo visibility: private for now; GitHub Pages hosting needs it public (or GitHub Pro).
+
+## Decided
+
+- Visual identity (logo, colours, font) is designed **by the director**, after the first
+  prototype. The prototype uses neutral placeholders.

@@ -1,16 +1,16 @@
-# #D (SharpD) - Agent Instructions
+# SharpDul (#Dul) - Agent Instructions
 
 Read this first, then `DESIGN_BRIEF.md` (the app). This file is in the repository on purpose:
 it is the only context that reaches every machine. Do not rely on memory from other sessions.
 
 ## What this is
 
-**#D** is the director's personal gamedev coach: spaced-repetition quizzes and live labs
+**SharpDul** is the director's personal gamedev coach: spaced-repetition quizzes and live labs
 built from their own game projects (LuaLander, FerryHeist, ...). Two parts:
 
-- **#D Pocket** - Blazor WebAssembly PWA in C#, installed on the iPhone from Safari.
+- **SharpDul Pocket** - Blazor WebAssembly PWA in C#, installed on the iPhone from Safari.
   There is no Mac, so no native iOS build.
-- **#D Playground** - a Unity `6000.3.14f1` project for the Windows PCs (particles, UI, 3D).
+- **SharpDul Playground** - a Unity `6000.3.14f1` project for the Windows PCs (particles, UI, 3D).
 
 ## Roles
 
@@ -38,3 +38,5 @@ The user writes casual Slovak mixed with English gamedev terms - answer in the s
 - Easy level never uses fill-in, find-the-bug or write-the-function questions.
 - Progress uses **active days**, never a breakable streak. No deadline pressure.
 - The app holds no API keys and does no tracking.
+- Visual identity (logo, colours, fonts) belongs to the director. Use neutral placeholders
+  and never invent branding.
