@@ -96,12 +96,13 @@ The owner first; possibly shared with classmates later.
 
 ## Open questions
 
-- Storage backup: browser storage on iPhone can be lost (e.g. clearing Safari data).
-  The director wants it "like the RESET 90 app" - how that app backs up is still to be
-  clarified.
-- Repo visibility: private for now; GitHub Pages hosting needs it public (or GitHub Pro).
 
 ## Decided
+
+- **Backup:** browser storage on iPhone can be lost (e.g. clearing Safari data), so the app
+  has **Export** and **Import** buttons that save/load all progress as one JSON file
+  (Files / iCloud Drive). No login, no server.
+- Repo `github.com/Krulansky/SharpDul` is **public**, so GitHub Pages hosting is free.
 
 - Visual identity (logo, colours, font) is designed **by the director**, after the first
   prototype. The prototype uses neutral placeholders.
