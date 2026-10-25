@@ -1,0 +1,80 @@
+﻿@page "/"
+@using SharpDul.Pocket.Logic
+@using SharpDul.Pocket.Models
+@using SharpDul.Pocket.Services
+@inject ContentLibrary Content
+@inject ProgressStore Progress
+
+<PageTitle>SharpDul</PageTitle>
+
+<header class="hero">
+    <h1>SharpDul</h1>
+    <p class="muted">#Dul · gamedev coach</p>
+</header>
+
+@if (progress == null || packs == null)
+{
+    <p class="muted">Loading…</p>
+}
+else
+{
+    <section class="card">
+        <div class="row">
+            <strong>Level @Progression.GetLevel(progress.Xp)</strong>
+            <span class="muted">@progress.Xp XP</span>
+        </div>
+        <div class="bar"><div class="bar-fill" style="width:@Percent(Progression.GetLevelProgress(progress.Xp))%"></div></div>
+
+        <div class="row days-row">
+            <span>Active @activeDays.Count(active => active) of the last @Progression.ActiveDaysWindow days</span>
+        </div>
+        <div class="days">
+            @foreach (bool active in activeDays)
+            {
+                <span class="day @(active ? "active" : "")"></span>
+            }
+        </div>
+    </section>
+
+    <a class="big-button primary" href="quiz/daily">
+        <span>Daily</span>
+        <small>@(dueCount == 0 ? "All caught up" : $"{dueCount} cards due · up to {SessionBuilder.DailySessionSize} per session")</small>
+    </a>
+
+    <h2>Projects</h2>
+    @foreach (ContentPack pack in packs)
+    {
+        <a class="big-button" href="quiz/burst/@pack.Id">
+            <span>@pack.Title</span>
+            <small>@pack.Description</small>
+            <small>Mastered @CountMastered(pack) / @pack.Questions.Count · Burst</small>
+        </a>
+    }
+
+    <a class="link-button" href="backup">Backup (export / import)</a>
+}
+
+@code {
+    private ProgressData? progress;
+    private IReadOnlyList<ContentPack>? packs;
+    private bool[] activeDays = Array.Empty<bool>();
+    private int dueCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        packs = await Content.GetPacksAsync();
+        progress = await Progress.GetAsync();
+
+        DateOnly today = ProgressStore.Today;
+        activeDays = Progression.GetActiveDays(progress, today);
+        dueCount = SessionBuilder.CountDue(packs.SelectMany(pack => pack.Questions), progress, today);
+    }
+
+    private int CountMastered(ContentPack pack)
+    {
+        return pack.Questions.Count(question =>
+            progress!.Cards.TryGetValue(question.Id, out CardProgress? card) && card.Box >= LeitnerScheduler.MasteredBox);
+    }
+
+    private static int Percent(float normalized) => (int)MathF.Round(normalized * 100f);
+}

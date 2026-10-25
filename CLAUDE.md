@@ -1,6 +1,6 @@
 # SharpDul (#Dul) - Agent Instructions
 
-Read this first, then `DESIGN_BRIEF.md` (the app). This file is in the repository on purpose:
+Read this first, then `PROJECT_STATE.md` (where we are) and `DESIGN_BRIEF.md` (the app). This file is in the repository on purpose:
 it is the only context that reaches every machine. Do not rely on memory from other sessions.
 
 ## What this is

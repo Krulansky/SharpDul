@@ -1,0 +1,52 @@
+@page "/backup"
+@using SharpDul.Pocket.Services
+@inject ProgressStore Progress
+
+<PageTitle>SharpDul · Backup</PageTitle>
+
+<nav class="top-bar">
+    <a href="">← Home</a>
+</nav>
+
+<h1>Backup</h1>
+
+<section class="card">
+    <h2>Export</h2>
+    <p>Saves all progress (XP, active days, every card) into one file. On iPhone choose
+        <em>Save to Files</em> and keep it in iCloud Drive.</p>
+    <button class="big-button primary" @onclick="Progress.ExportAsync">Export progress</button>
+</section>
+
+<section class="card">
+    <h2>Import</h2>
+    <p>Loads a backup file. <strong>It replaces the progress on this device.</strong></p>
+    <label class="big-button file-button">
+        Choose backup file
+        <InputFile OnChange="ImportAsync" accept=".json,application/json" />
+    </label>
+    @if (message != null)
+    {
+        <p class="muted">@message</p>
+    }
+</section>
+
+@code {
+    private const long MaxBackupBytes = 5 * 1024 * 1024;
+
+    private string? message;
+
+    private async Task ImportAsync(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var reader = new StreamReader(e.File.OpenReadStream(MaxBackupBytes));
+            string json = await reader.ReadToEndAsync();
+            bool imported = await Progress.ImportAsync(json);
+            message = imported ? "Progress imported." : "This file is not a SharpDul backup. Nothing was changed.";
+        }
+        catch (IOException)
+        {
+            message = "The file could not be read. Nothing was changed.";
+        }
+    }
+}

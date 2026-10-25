@@ -1,0 +1,154 @@
+@page "/quiz/daily"
+@page "/quiz/burst/{PackId}"
+@using SharpDul.Pocket.Logic
+@using SharpDul.Pocket.Models
+@using SharpDul.Pocket.Services
+@inject ContentLibrary Content
+@inject ProgressStore Progress
+
+<PageTitle>SharpDul · Quiz</PageTitle>
+
+<nav class="top-bar">
+    <a href="">← Home</a>
+    @if (questions != null && !IsFinished)
+    {
+        <span class="muted">@(index + 1) / @questions.Count</span>
+    }
+</nav>
+
+@if (questions == null)
+{
+    <p class="muted">Loading…</p>
+}
+else if (questions.Count == 0)
+{
+    <section class="card">
+        <h2>Nothing due right now</h2>
+        <p>Every card is resting until its next review. Pick a project for a Burst instead.</p>
+    </section>
+    <a class="big-button primary" href="">Back home</a>
+}
+else if (IsFinished)
+{
+    <section class="card">
+        <h2>Session done</h2>
+        <p>@correctCount / @questions.Count correct · +@xpGained XP</p>
+    </section>
+    <a class="big-button primary" href="">Back home</a>
+}
+else
+{
+    <section class="card">
+        <span class="tag">@Current.Difficulty</span>
+        <p class="prompt">@Current.Prompt</p>
+        @if (!string.IsNullOrEmpty(Current.Code))
+        {
+            <pre class="code"><code>@Current.Code</code></pre>
+        }
+    </section>
+
+    @for (int i = 0; i < optionOrder.Count; i++)
+    {
+        int optionIndex = optionOrder[i];
+        <button class="option @OptionClass(optionIndex)" disabled="@(chosenIndex != null)" @onclick="() => ChooseAsync(optionIndex)">
+            @Current.Options[optionIndex]
+        </button>
+    }
+
+    @if (chosenIndex != null)
+    {
+        <section class="card feedback @(chosenIndex == Current.AnswerIndex ? "right" : "wrong")">
+            <strong>@(chosenIndex == Current.AnswerIndex ? "Correct" : "Not quite")</strong>
+            <p>@Current.Explanation</p>
+            <p class="muted source">@Current.Source.Label</p>
+        </section>
+        <button class="big-button primary" @onclick="Next">@(index + 1 < questions.Count ? "Next" : "Finish")</button>
+    }
+}
+
+@code {
+    [Parameter] public string? PackId { get; set; }
+
+    private List<Question>? questions;
+    private int index;
+    private List<int> optionOrder = new();
+    private int? chosenIndex;
+    private int correctCount;
+    private int xpGained;
+
+    private Question Current => questions![index];
+    private bool IsFinished => questions != null && index >= questions.Count;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        IReadOnlyList<ContentPack> packs = await Content.GetPacksAsync();
+
+        if (PackId == null)
+        {
+            ProgressData progress = await Progress.GetAsync();
+            questions = SessionBuilder.BuildDaily(packs.SelectMany(pack => pack.Questions), progress, ProgressStore.Today);
+        }
+        else
+        {
+            ContentPack? pack = packs.FirstOrDefault(pack => pack.Id == PackId);
+            questions = pack == null ? new List<Question>() : SessionBuilder.BuildBurst(pack);
+        }
+
+        index = 0;
+        correctCount = 0;
+        xpGained = 0;
+        PrepareQuestion();
+    }
+
+    private void PrepareQuestion()
+    {
+        chosenIndex = null;
+        if (IsFinished || questions!.Count == 0)
+        {
+            return;
+        }
+
+        // Content packs list the right answer first; shuffle so its position gives nothing away.
+        // True/false keeps its natural order.
+        optionOrder = Enumerable.Range(0, Current.Options.Count).ToList();
+        if (Current.Type != QuestionType.TrueFalse)
+        {
+            optionOrder = optionOrder.OrderBy(_ => Random.Shared.Next()).ToList();
+        }
+    }
+
+    private async Task ChooseAsync(int optionIndex)
+    {
+        if (chosenIndex != null)
+        {
+            return;
+        }
+
+        chosenIndex = optionIndex;
+        bool correct = optionIndex == Current.AnswerIndex;
+        if (correct)
+        {
+            correctCount++;
+        }
+        xpGained += await Progress.RecordAnswerAsync(Current, correct);
+    }
+
+    private void Next()
+    {
+        index++;
+        PrepareQuestion();
+    }
+
+    private string OptionClass(int optionIndex)
+    {
+        if (chosenIndex == null)
+        {
+            return "";
+        }
+        if (optionIndex == Current.AnswerIndex)
+        {
+            return "right";
+        }
+        return optionIndex == chosenIndex ? "wrong" : "dim";
+    }
+}
