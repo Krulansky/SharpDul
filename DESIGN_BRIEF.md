@@ -94,9 +94,6 @@ owner's own projects instead of a fixed 30-day course, and **no tracking**.
 
 The owner first; possibly shared with classmates later.
 
-## Open questions
-
-
 ## Decided
 
 - **Backup:** browser storage on iPhone can be lost (e.g. clearing Safari data), so the app
