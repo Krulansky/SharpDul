@@ -1,38 +1,40 @@
 @page "/backup"
+@using SharpDul.Pocket.Localization
 @using SharpDul.Pocket.Services
 @inject ProgressStore Progress
+@inject Localizer Loc
 
 <PageTitle>SharpDul · Backup</PageTitle>
 
 <nav class="top-bar">
-    <a href="">← Home</a>
+    <a href="">@Loc["home"]</a>
 </nav>
 
-<h1>Backup</h1>
+<h1>@Loc["backup"]</h1>
 
 <section class="card">
-    <h2>Export</h2>
-    <p>Saves all progress (XP, active days, every card) into one file. On iPhone choose
-        <em>Save to Files</em> and keep it in iCloud Drive.</p>
-    <button class="big-button primary" @onclick="Progress.ExportAsync">Export progress</button>
+    <h2>@Loc["export"]</h2>
+    <p>@Loc["exportText"]</p>
+    <button class="big-button primary" @onclick="Progress.ExportAsync">@Loc["exportButton"]</button>
 </section>
 
 <section class="card">
-    <h2>Import</h2>
-    <p>Loads a backup file. <strong>It replaces the progress on this device.</strong></p>
+    <h2>@Loc["import"]</h2>
+    <p><strong>@Loc["importText"]</strong></p>
     <label class="big-button file-button">
-        Choose backup file
+        @Loc["chooseFile"]
         <InputFile OnChange="ImportAsync" accept=".json,application/json" />
     </label>
     @if (message != null)
     {
-        <p class="muted">@message</p>
+        <p class="muted">@Loc[message]</p>
     }
 </section>
 
 @code {
     private const long MaxBackupBytes = 5 * 1024 * 1024;
 
+    // Strings key of the result message.
     private string? message;
 
     private async Task ImportAsync(InputFileChangeEventArgs e)
@@ -42,11 +44,16 @@
             using var reader = new StreamReader(e.File.OpenReadStream(MaxBackupBytes));
             string json = await reader.ReadToEndAsync();
             bool imported = await Progress.ImportAsync(json);
-            message = imported ? "Progress imported." : "This file is not a SharpDul backup. Nothing was changed.";
+            message = imported ? "imported" : "notBackup";
+            if (imported)
+            {
+                // The backup carries its own language.
+                await Loc.InitAsync();
+            }
         }
         catch (IOException)
         {
-            message = "The file could not be read. Nothing was changed.";
+            message = "unreadable";
         }
     }
 }

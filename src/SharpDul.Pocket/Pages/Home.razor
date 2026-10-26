@@ -1,32 +1,42 @@
 ﻿@page "/"
+@using SharpDul.Pocket.Localization
 @using SharpDul.Pocket.Logic
 @using SharpDul.Pocket.Models
 @using SharpDul.Pocket.Services
 @inject ContentLibrary Content
 @inject ProgressStore Progress
+@inject Localizer Loc
 
 <PageTitle>SharpDul</PageTitle>
 
 <header class="hero">
-    <h1>SharpDul</h1>
-    <p class="muted">#Dul · gamedev coach</p>
+    <div class="row">
+        <h1>SharpDul</h1>
+        <div class="lang-switch">
+            @foreach (Language language in LanguageInfo.All)
+            {
+                <button class="@(language == Loc.Current ? "active" : "")" @onclick="() => SetLanguageAsync(language)">@LanguageInfo.Label(language)</button>
+            }
+        </div>
+    </div>
+    <p class="muted">@Loc["tagline"]</p>
 </header>
 
 @if (progress == null || packs == null)
 {
-    <p class="muted">Loading…</p>
+    <p class="muted">@Loc["loading"]</p>
 }
 else
 {
     <section class="card">
         <div class="row">
-            <strong>Level @Progression.GetLevel(progress.Xp)</strong>
+            <strong>@Loc.Format("level", Progression.GetLevel(progress.Xp))</strong>
             <span class="muted">@progress.Xp XP</span>
         </div>
         <div class="bar"><div class="bar-fill" style="width:@Percent(Progression.GetLevelProgress(progress.Xp))%"></div></div>
 
         <div class="row days-row">
-            <span>Active @activeDays.Count(active => active) of the last @Progression.ActiveDaysWindow days</span>
+            <span>@Loc.Format("activeDays", activeDays.Count(active => active), Progression.ActiveDaysWindow)</span>
         </div>
         <div class="days">
             @foreach (bool active in activeDays)
@@ -37,31 +47,40 @@ else
     </section>
 
     <a class="big-button primary" href="quiz/daily">
-        <span>Daily</span>
-        <small>@(dueCount == 0 ? "All caught up" : $"{dueCount} cards due · up to {SessionBuilder.DailySessionSize} per session")</small>
+        <span>@Loc["daily"]</span>
+        <small>@(dueCount == 0 ? Loc["allCaughtUp"] : Loc.Format("cardsDue", dueCount, SessionBuilder.DailySessionSize))</small>
     </a>
 
-    <h2>Projects</h2>
+    <h2>@Loc["projects"]</h2>
     @foreach (ContentPack pack in packs)
     {
         <a class="big-button" href="quiz/burst/@pack.Id">
             <span>@pack.Title</span>
             <small>@pack.Description</small>
-            <small>Mastered @CountMastered(pack) / @pack.Questions.Count · Burst</small>
+            <small>@Loc.Format("masteredBurst", CountMastered(pack), pack.Questions.Count)</small>
         </a>
     }
 
-    <a class="link-button" href="backup">Backup (export / import)</a>
+    <h2>@Loc["labs"]</h2>
+    <a class="big-button" href="lab/lander">
+        <span>@Loc["mechanicsLab"] · LuaLander</span>
+        <small>@Loc["mechanicsLabDesc"]</small>
+    </a>
+
+    <a class="link-button" href="backup">@Loc["backupLink"]</a>
 }
 
 @code {
+    [CascadingParameter] public Language Language { get; set; }
+
     private ProgressData? progress;
     private IReadOnlyList<ContentPack>? packs;
     private bool[] activeDays = Array.Empty<bool>();
     private int dueCount;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
+        // Runs again when the language changes, to load the translated packs.
         packs = await Content.GetPacksAsync();
         progress = await Progress.GetAsync();
 
@@ -69,6 +88,8 @@ else
         activeDays = Progression.GetActiveDays(progress, today);
         dueCount = SessionBuilder.CountDue(packs.SelectMany(pack => pack.Questions), progress, today);
     }
+
+    private Task SetLanguageAsync(Language language) => Loc.SetLanguageAsync(language);
 
     private int CountMastered(ContentPack pack)
     {

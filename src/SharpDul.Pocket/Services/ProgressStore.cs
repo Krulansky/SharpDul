@@ -54,6 +54,13 @@ public class ProgressStore
         return xp;
     }
 
+    public async Task SetLanguageAsync(string languageCode)
+    {
+        ProgressData data = await GetAsync();
+        data.Language = languageCode;
+        await SaveAsync();
+    }
+
     public async Task ExportAsync()
     {
         ProgressData data = await GetAsync();

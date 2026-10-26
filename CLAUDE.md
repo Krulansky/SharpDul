@@ -42,6 +42,10 @@ The user writes casual Slovak mixed with English gamedev terms - answer in the s
   without giving the answer. Ask in game terms ("you land at speed 5 - what happens?"),
   not in jargon. Director feedback 2026-10-26: snippets that had nothing to do with the
   answer made the first version too hard.
+- **Languages: EN, SK, KR (Korean).** English is the source (`<pack>.json`); translations
+  live in `<pack>.sk.json` / `<pack>.ko.json` and must cover every question. UI text is in
+  `Localization/Strings.cs`. **Gamedev terms stay English in every language** (event,
+  singleton, particles, landing pad, Burst, XP, Level, ...); code is never translated.
 - Progress uses **active days**, never a breakable streak. No deadline pressure.
 - The app holds no API keys and does no tracking.
 - Visual identity (logo, colours, fonts) belongs to the director. Use neutral placeholders

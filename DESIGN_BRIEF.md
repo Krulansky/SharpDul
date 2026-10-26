@@ -96,6 +96,9 @@ The owner first; possibly shared with classmates later.
 
 ## Decided
 
+- **Languages:** EN, SK and KR (Korean), switchable in the app. Gamedev terms stay English
+  everywhere.
+
 - **Backup:** browser storage on iPhone can be lost (e.g. clearing Safari data), so the app
   has **Export** and **Import** buttons that save/load all progress as one JSON file
   (Files / iCloud Drive). No login, no server.

@@ -2,7 +2,7 @@
 
 Session handoff between machines and sessions. Keep it short and current.
 
-## Where we are (2026-10-25)
+## Where we are (2026-10-26)
 
 **First prototype of SharpDul Pocket** (Blazor WebAssembly PWA, .NET 10):
 
@@ -18,6 +18,16 @@ Session handoff between machines and sessions. Keep it short and current.
 - Content: `lualander-easy.json` - 10 Easy questions from LuaLander, rewritten 2026-10-26
   after director feedback: each has context, highlighted answer lines and a hint
   ("Show hint" button, no XP penalty).
+- Languages: EN / SK / KR switch on Home (saved with progress, so part of the backup).
+  UI strings in `Localization/Strings.cs`; pack translations in `content/<pack>.<sk|ko>.json`.
+- **Mechanics Lab · LuaLander** (`Pages/Lab.razor`, `Logic/LanderSim.cs`): a C# port of
+  `Lander.cs` with the real Rigidbody2D values (mass 1, Linear Damping 1, Angular Damping 5,
+  BoxCollider2D 0.92 x 1.47, 0.02 s fixed step). Hold-buttons (and arrow keys / WASD),
+  sliders for force, turnSpeed, GRAVITY_NORMAL, fuelAmountMax, softLandingVelocityMagnitude,
+  minDotVector. The matching code lines light up (live strip under the game + full code
+  card). Same landing rules and score formula as the game (pad multiplier 1). Physics is a
+  close approximation of Box2D, not bit-exact. An autopilot test landed successfully
+  (speed 1.05, score 395).
 - Look: neutral grey placeholders. The director designs the visual identity.
 
 Verified in headless Chromium at iPhone 13 size, served under `/SharpDul/` like GitHub Pages:
@@ -30,9 +40,10 @@ Live at https://krulansky.github.io/SharpDul/ - director confirmed on the iPhone
 ```
 src/SharpDul.Pocket/
   Models/     content + progress data classes
-  Logic/      pure rules: LeitnerScheduler, Progression, SessionBuilder (no UI, no storage)
+  Logic/      pure rules: LeitnerScheduler, Progression, SessionBuilder, LanderSim (no UI, no storage)
+  Localization/  Language, Strings (UI text EN/SK/KR), Localizer (current language)
   Services/   ContentLibrary (loads packs), ProgressStore (localStorage, export/import)
-  Pages/      Home, Quiz, Backup (UI only - they call Services)
+  Pages/      Home, Quiz, Backup, Lab (UI only - they call Services / Logic)
   wwwroot/content/   index.json + one JSON per content pack
 .github/workflows/deploy-pages.yml   publish to GitHub Pages on every push to main
 ```
@@ -49,6 +60,6 @@ src/SharpDul.Pocket/
 
 ## Next
 
-1. Director retries the rewritten quiz on the iPhone.
-2. Mechanics Lab: lander simulation with sliders on the real `Lander.cs` values.
-3. More LuaLander questions, then Medium level.
+1. Director tries the Mechanics Lab and the language switch on the iPhone.
+2. More LuaLander questions, then Medium level (`?.Invoke`, dot product, SetActive vs events).
+3. Particle Lab (sandbox + "recreate this effect").

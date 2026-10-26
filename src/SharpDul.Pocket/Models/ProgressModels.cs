@@ -15,6 +15,7 @@ public class ProgressData
     public const int CurrentVersion = 1;
 
     public int Version { get; set; } = CurrentVersion;
+    public string Language { get; set; } = "en";
     public int Xp { get; set; }
     public HashSet<DateOnly> ActiveDays { get; set; } = new();
     public Dictionary<string, CardProgress> Cards { get; set; } = new();

@@ -1,0 +1,126 @@
+{
+  "title": "LuaLander",
+  "description": "첫 번째 게임의 Easy 문제: 착륙, 연료, coin, event, particles.",
+  "questions": {
+    "lualander.fuel-deltatime": {
+      "context": "thrust 키를 누르고 있는 동안 계속 실행돼요. 연료 탱크는 처음에 가득 차 있어요: fuelAmountMax = 10.",
+      "prompt": "탱크가 가득 찼을 때, thrust를 대략 얼마나 오래 쓸 수 있을까요?",
+      "options": [
+        "약 10초",
+        "약 1초",
+        "10 frame - 눈 깜짝할 사이",
+        "영원히 - 연료가 줄지 않아요"
+      ],
+      "hint": "Time.deltaTime은 \"frame당\"을 \"초당\"으로 바꿔 줘요. 탱크는 초당 1씩 줄고, 용량은 10이에요.",
+      "explanation": "1초에 연료 1을 쓰고 가득 찬 탱크는 10이니까 약 10초예요. Time.deltaTime이 없으면 frame마다 1씩 줄어서 순식간에 비어 버려요."
+    },
+    "lualander.soft-landing-speed": {
+      "context": "착륙선이 landing pad에 닿을 때 실행돼요. 얼마나 빠르게 내려왔는지 검사해요.",
+      "prompt": "속도 5로 pad에 닿았어요. 어떻게 될까요?",
+      "options": [
+        "Crash - game over, 너무 세게 착륙했어요",
+        "착륙 성공",
+        "speed 보너스와 함께 착륙 성공",
+        "아무 일도 없어요 - 착륙선이 튕겨요"
+      ],
+      "hint": "두 숫자를 비교해 보세요: 내 속도(5)와 softLandingVelocityMagnitude(4). 5가 더 큰가요?",
+      "explanation": "5 > 4이므로 if가 참이 되고 TooFastLanding으로 게임이 끝나요. 안전하게 착륙하려면 속도 4 이하로 닿아야 해요."
+    },
+    "lualander.steep-angle": {
+      "context": "이것도 착륙할 때 실행돼요. Vector2.up은 똑바로 위를, transform.up은 착륙선 윗부분이 향하는 방향을 가리켜요. 두 벡터의 dot product는 착륙선이 완전히 똑바로 서 있을 때 1이고, 기울수록 작아져요.",
+      "prompt": "한쪽으로 크게 기운 채 착륙했어요. 이 코드는 어떻게 판단할까요?",
+      "options": [
+        "너무 기울었어요 - game over",
+        "착륙 성공",
+        "착륙선이 스스로 똑바로 서요",
+        "Score가 두 배가 돼요"
+      ],
+      "hint": "크게 기울면 dotVector가 1보다 훨씬 작아져요. 0.90보다 작을까요?",
+      "explanation": "크게 기울면 dotVector가 0.90보다 훨씬 작아져서 if가 참이 돼요: TooSteepAngle, game over. 거의 똑바로 착륙해야 해요."
+    },
+    "lualander.trygetcomponent-terrain": {
+      "context": "착륙선이 무언가에 부딪힐 때마다 실행돼요. LandingPad component는 landing pad에만 있어요.",
+      "prompt": "바위에 부딪혔어요. 어떻게 될까요?",
+      "options": [
+        "Crash - \"Crashed on the Terrain\"",
+        "바위 위에 착륙해요",
+        "바위가 부서져요",
+        "아무 일도 없어요 - 바위는 무시돼요"
+      ],
+      "hint": "!는 NOT이라는 뜻이에요. 첫 줄을 이렇게 읽어 보세요: \"부딪힌 물체에 LandingPad가 없다면...\"",
+      "explanation": "바위에는 LandingPad가 없으니 TryGetComponent는 false를 돌려주고, !가 그걸 true로 바꿔서 착륙선이 추락해요. TryGetComponent는 component를 확인하고 가져오는 걸 한 번에 해요."
+    },
+    "lualander.fuel-clamp": {
+      "context": "착륙선이 연료 통을 지나갈 때 실행돼요. 탱크에는 최대 fuelAmountMax = 10까지 들어가요.",
+      "prompt": "연료가 8일 때 연료 통을 먹었어요. 이제 연료는 얼마일까요?",
+      "options": [
+        "10 - 가득 찬 탱크",
+        "18",
+        "8 - 변화 없음",
+        "20"
+      ],
+      "hint": "8 + 10 = 18. 이제 if를 보세요: 연료가 최대치보다 많으면 어떻게 될까요?",
+      "explanation": "8 + 10 = 18이지만 if가 fuelAmountMax로 잘라 주기 때문에 탱크는 그냥 가득 찬 10이 돼요."
+    },
+    "lualander.coin-score": {
+      "context": "GameManager.cs는 착륙선의 OnCoinPickup event를 듣고 있어요. coin을 먹을 때마다 이 method가 실행돼요.",
+      "prompt": "coin 하나를 먹었어요. score는 어떻게 될까요?",
+      "options": [
+        "500 올라가요",
+        "1 올라가요",
+        "두 배가 돼요",
+        "변화 없음 - coin은 연료만 채워요"
+      ],
+      "hint": "AddScore( ) 괄호 안의 숫자를 보세요.",
+      "explanation": "coin마다 AddScore(500)이 호출돼요. 착륙선은 \"coin을 먹었다\"고 알리기만 하고, coin의 가치는 GameManager가 정해요."
+    },
+    "lualander.singleton-instance": {
+      "context": "Lander.cs의 맨 위 부분이에요. GameManager, UI, audio script 모두 scene에 하나뿐인 착륙선과 소통해야 해요.",
+      "prompt": "다른 script들은 착륙선을 어떻게 찾을까요?",
+      "options": [
+        "Lander.Instance라고 써요",
+        "각자 새 Lander를 만들어요",
+        "매 frame마다 scene 전체를 검색해요",
+        "착륙선이 직접 찾아서 호출해요"
+      ],
+      "hint": "Instance = this는 착륙선을 static property에 저장해요. static이면 class 이름으로 접근해요: Lander.____",
+      "explanation": "이게 singleton pattern이에요: Awake에서 착륙선이 자기 자신을 static Instance에 저장하고, 어떤 script든 Lander.Instance로 접근해요 - 예: GameManager의 Lander.Instance.OnLanded += ..."
+    },
+    "lualander.visuals-listen": {
+      "context": "이건 LanderVisuals.cs - thruster 불꽃을 담당하는 script예요. Lander.cs는 thrust할 때 OnUpForce event만 보내고 particles는 절대 건드리지 않아요.",
+      "prompt": "thrust할 때 불꽃은 누가 켤까요?",
+      "options": [
+        "LanderVisuals - OnUpForce를 듣고 particles를 켜요",
+        "Lander.cs가 힘을 더한 직후에",
+        "GameManager",
+        "ParticleSystem이 스스로 켜져요"
+      ],
+      "hint": "+=는 \"이 event가 발생하면 내 method를 호출해\"라는 뜻이에요. 그 줄은 어느 script에 있나요?",
+      "explanation": "LanderVisuals가 OnUpForce를 구독하고 particles를 켜는 걸로 반응해요. 로직(Lander)과 비주얼(LanderVisuals)이 분리되어 있어요 - FerryHeist도 같은 구조예요."
+    },
+    "lualander.emission-fade": {
+      "context": "thrust를 놓으면 LanderVisuals가 emission을 꺼요. 불꽃은 바로 사라지지 않고 서서히 꺼져요.",
+      "prompt": "왜 불꽃이 바로 사라지지 않고 서서히 꺼질까요?",
+      "options": [
+        "emission을 끄면 새 particles만 멈추고, 이미 날아가는 건 lifetime이 끝날 때까지 살아 있어요",
+        "particle system이 천천히 파괴돼요",
+        "Unity가 fade-out 애니메이션을 재생해요",
+        "착륙선이 잠시 더 thrust해요"
+      ],
+      "hint": "emission은 particle system에서 새 particles를 spawn하는 부분이에요. 이미 있는 particles는 어떻게 될까요?",
+      "explanation": "emission을 끄면 spawn만 멈추고, 살아 있는 particles는 lifetime을 끝까지 채워요. 그래서 추가 애니메이션 없이도 불꽃이 자연스럽게 꺼져요."
+    },
+    "lualander.static-level": {
+      "context": "GameManager.cs가 여기서 level 번호를 저장해요. 새 level마다 scene 전체를 다시 불러오고, 그때 새 GameManager 객체가 만들어져요.",
+      "prompt": "level 1을 깨고 scene이 다시 로드됐어요. 게임은 어떻게 level 2라는 걸 기억할까요?",
+      "options": [
+        "levelNumber가 static이라서 - 다시 로드되는 객체가 아니라 class에 속해요",
+        "Unity가 파일에 저장해요",
+        "기억 못 해요 - 항상 level 1부터 다시 시작해요",
+        "Inspector가 기억해요"
+      ],
+      "hint": "마지막 줄의 score와 levelNumber를 비교해 보세요. score에는 어떤 단어가 없나요?",
+      "explanation": "static field는 class에 속하니까 scene을 다시 로드해도 살아남아요. score는 static이 아니라서 level마다 0부터 시작하고, levelNumber와 totalScore는 이어져요."
+    }
+  }
+}

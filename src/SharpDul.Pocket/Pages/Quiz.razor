@@ -1,15 +1,17 @@
 @page "/quiz/daily"
 @page "/quiz/burst/{PackId}"
+@using SharpDul.Pocket.Localization
 @using SharpDul.Pocket.Logic
 @using SharpDul.Pocket.Models
 @using SharpDul.Pocket.Services
 @inject ContentLibrary Content
 @inject ProgressStore Progress
+@inject Localizer Loc
 
 <PageTitle>SharpDul · Quiz</PageTitle>
 
 <nav class="top-bar">
-    <a href="">← Home</a>
+    <a href="">@Loc["home"]</a>
     @if (questions != null && !IsFinished)
     {
         <span class="muted">@(index + 1) / @questions.Count</span>
@@ -18,23 +20,23 @@
 
 @if (questions == null)
 {
-    <p class="muted">Loading…</p>
+    <p class="muted">@Loc["loading"]</p>
 }
 else if (questions.Count == 0)
 {
     <section class="card">
-        <h2>Nothing due right now</h2>
-        <p>Every card is resting until its next review. Pick a project for a Burst instead.</p>
+        <h2>@Loc["nothingDue"]</h2>
+        <p>@Loc["nothingDueText"]</p>
     </section>
-    <a class="big-button primary" href="">Back home</a>
+    <a class="big-button primary" href="">@Loc["backHome"]</a>
 }
 else if (IsFinished)
 {
     <section class="card">
-        <h2>Session done</h2>
-        <p>@correctCount / @questions.Count correct · +@xpGained XP</p>
+        <h2>@Loc["sessionDone"]</h2>
+        <p>@Loc.Format("sessionResult", correctCount, questions.Count, xpGained)</p>
     </section>
-    <a class="big-button primary" href="">Back home</a>
+    <a class="big-button primary" href="">@Loc["backHome"]</a>
 }
 else
 {
@@ -58,7 +60,7 @@ else
             }
             else
             {
-                <button class="hint-button" @onclick="() => showHint = true">Show hint</button>
+                <button class="hint-button" @onclick="() => showHint = true">@Loc["showHint"]</button>
             }
         }
     </section>
@@ -74,16 +76,17 @@ else
     @if (chosenIndex != null)
     {
         <section class="card feedback @(chosenIndex == Current.AnswerIndex ? "right" : "wrong")">
-            <strong>@(chosenIndex == Current.AnswerIndex ? "Correct" : "Not quite")</strong>
+            <strong>@(chosenIndex == Current.AnswerIndex ? Loc["correct"] : Loc["notQuite"])</strong>
             <p>@Current.Explanation</p>
             <p class="muted source">@Current.Source.Label</p>
         </section>
-        <button class="big-button primary" @onclick="Next">@(index + 1 < questions.Count ? "Next" : "Finish")</button>
+        <button class="big-button primary" @onclick="Next">@(index + 1 < questions.Count ? Loc["next"] : Loc["finish"])</button>
     }
 }
 
 @code {
     [Parameter] public string? PackId { get; set; }
+    [CascadingParameter] public Language Language { get; set; }
 
     private List<Question>? questions;
     private int index;

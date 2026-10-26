@@ -1,0 +1,126 @@
+{
+  "title": "LuaLander",
+  "description": "Easy otázky z prvej hry: pristávanie, palivo, coiny, eventy a particles.",
+  "questions": {
+    "lualander.fuel-deltatime": {
+      "context": "Toto beží každú chvíľu, keď držíš thrust. Nádrž je na začiatku plná: fuelAmountMax = 10.",
+      "prompt": "S plnou nádržou - ako dlho približne vieš ťahať thrust?",
+      "options": [
+        "Asi 10 sekúnd",
+        "Asi 1 sekundu",
+        "10 frameov - zlomok sekundy",
+        "Navždy - palivo nikdy neubudne"
+      ],
+      "hint": "Time.deltaTime mení \"za frame\" na \"za sekundu\". Nádrž teda stráca 1 za sekundu - a zmestí sa do nej 10.",
+      "explanation": "Každá sekunda stojí 1 palivo a plná nádrž má 10, takže asi 10 sekúnd thrustu. Bez Time.deltaTime by ubúdalo 1 za frame a nádrž by bola prázdna okamžite."
+    },
+    "lualander.soft-landing-speed": {
+      "context": "Toto beží, keď sa lander dotkne landing padu. Kontroluje, akou rýchlosťou si priletel.",
+      "prompt": "Dotkneš sa padu rýchlosťou 5. Čo sa stane?",
+      "options": [
+        "Crash - game over, pristál si príliš tvrdo",
+        "Úspešné pristátie",
+        "Úspešné pristátie so speed bonusom",
+        "Nič - lander sa odrazí"
+      ],
+      "hint": "Porovnaj dve čísla: tvoju rýchlosť (5) a softLandingVelocityMagnitude (4). Je 5 viac?",
+      "explanation": "5 > 4, takže if platí a hra končí s TooFastLanding. Bezpečne pristaneš len rýchlosťou 4 alebo menej."
+    },
+    "lualander.steep-angle": {
+      "context": "Aj toto beží pri pristátí. Vector2.up mieri rovno hore; transform.up je smer, kam mieri vrch landera. Ich dot product je 1, keď lander stojí úplne rovno, a čím viac sa nakláňa, tým je menší.",
+      "prompt": "Pristaneš silno naklonený na bok. Čo rozhodne tento kód?",
+      "options": [
+        "Príliš strmo - game over",
+        "Úspešné pristátie",
+        "Lander sa sám vyrovná",
+        "Score sa zdvojnásobí"
+      ],
+      "hint": "Silný náklon znamená, že dotVector je oveľa menší ako 1. Je pod 0.90?",
+      "explanation": "Veľký náklon stlačí dotVector hlboko pod 0.90, takže if platí: TooSteepAngle, game over. Pristáť musíš takmer rovno."
+    },
+    "lualander.trygetcomponent-terrain": {
+      "context": "Toto beží vždy, keď lander do niečoho narazí. LandingPad komponent majú len landing pady.",
+      "prompt": "Narazíš do skaly. Čo sa stane?",
+      "options": [
+        "Crash - \"Crashed on the Terrain\"",
+        "Pristaneš na skale",
+        "Skala sa rozbije",
+        "Nič - skaly sa ignorujú"
+      ],
+      "hint": "! znamená NIE. Prvý riadok čítaj: \"ak to, do čoho som narazil, NEMÁ LandingPad...\"",
+      "explanation": "Skala nemá LandingPad, takže TryGetComponent vráti false, ! z toho spraví true a lander havaruje. TryGetComponent naraz skontroluje komponent aj ti ho vráti."
+    },
+    "lualander.fuel-clamp": {
+      "context": "Toto beží, keď lander preletí cez kanister paliva. Do nádrže sa zmestí najviac fuelAmountMax = 10.",
+      "prompt": "Máš 8 paliva a zoberieš kanister. Koľko paliva máš teraz?",
+      "options": [
+        "10 - plná nádrž",
+        "18",
+        "8 - nič sa nezmení",
+        "20"
+      ],
+      "hint": "8 + 10 = 18. Teraz sa pozri na if: čo sa stane, keď je paliva viac ako maximum?",
+      "explanation": "8 + 10 = 18, ale if to oreže na fuelAmountMax, takže nádrž je jednoducho plná: 10."
+    },
+    "lualander.coin-score": {
+      "context": "GameManager.cs počúva event OnCoinPickup od landera. Táto metóda beží vždy, keď zoberieš coin.",
+      "prompt": "Zoberieš jeden coin. Čo sa stane so score?",
+      "options": [
+        "Stúpne o 500",
+        "Stúpne o 1",
+        "Zdvojnásobí sa",
+        "Nič - coiny len dopĺňajú palivo"
+      ],
+      "hint": "Pozri sa na číslo v zátvorke AddScore( ).",
+      "explanation": "Každý coin zavolá AddScore(500). Lander len oznámi \"zobral som coin\"; koľko coin stojí, rozhoduje GameManager."
+    },
+    "lualander.singleton-instance": {
+      "context": "Toto je začiatok Lander.cs. GameManager, UI aj audio skripty sa potrebujú rozprávať s jediným landerom v scéne.",
+      "prompt": "Ako ostatné skripty nájdu landera?",
+      "options": [
+        "Napíšu Lander.Instance",
+        "Každý si vytvorí nového Landera",
+        "Každý frame prehľadajú celú scénu",
+        "Lander ich nájde a zavolá sám"
+      ],
+      "hint": "Instance = this uloží landera do static property. Static znamená, že sa k nej dostaneš cez meno triedy: Lander.____",
+      "explanation": "To je singleton pattern: v Awake sa lander uloží do static Instance a ktorýkoľvek skript potom napíše Lander.Instance - napr. GameManager robí Lander.Instance.OnLanded += ..."
+    },
+    "lualander.visuals-listen": {
+      "context": "Toto je LanderVisuals.cs - skript, ktorému patria plamene thrusterov. Lander.cs pri thruste len vystrelí event OnUpForce; na particles nikdy nesiahne.",
+      "prompt": "Kto zapne plamene, keď dáš thrust?",
+      "options": [
+        "LanderVisuals - počúva OnUpForce a zapne particles",
+        "Lander.cs, hneď po pridaní sily",
+        "GameManager",
+        "ParticleSystem sa zapne sám"
+      ],
+      "hint": "+= znamená \"keď tento event vystrelí, zavolaj moju metódu\". V ktorom skripte je ten riadok?",
+      "explanation": "LanderVisuals sa prihlási na OnUpForce a zareaguje zapnutím particles. Logika (Lander) a vizuál (LanderVisuals) ostávajú oddelené - rovnako ako vo FerryHeist."
+    },
+    "lualander.emission-fade": {
+      "context": "Keď pustíš thrust, LanderVisuals vypne emission. Plameň nezmizne naraz - postupne dohasne.",
+      "prompt": "Prečo plameň dohasína a nezmizne okamžite?",
+      "options": [
+        "Vypnutá emission zastaví len NOVÉ particles - tie, čo už letia, dožijú svoj lifetime",
+        "Particle system sa pomaly zničí",
+        "Unity prehrá fade-out animáciu",
+        "Lander ešte chvíľu ťahá"
+      ],
+      "hint": "Emission je časť particle systému, ktorá spawnuje nové particles. A čo tie, ktoré už existujú?",
+      "explanation": "Vypnutie emission zastaví spawnovanie; živé particles dožijú svoj lifetime. Preto plameň prirodzene dohasne - bez akejkoľvek animácie navyše."
+    },
+    "lualander.static-level": {
+      "context": "GameManager.cs si tu drží číslo levelu. Každý nový level načíta celú scénu znova, čím vznikne nový GameManager objekt.",
+      "prompt": "Dokončíš level 1 a scéna sa znova načíta. Ako hra stále vie, že si na leveli 2?",
+      "options": [
+        "levelNumber je static - patrí triede, nie objektu, ktorý sa znovu načíta",
+        "Unity ho uloží do súboru",
+        "Nevie - vždy začneš znova na leveli 1",
+        "Pamätá si ho Inspector"
+      ],
+      "hint": "Porovnaj levelNumber so score na poslednom riadku. Ktoré slovo score nemá?",
+      "explanation": "Static fieldy patria triede, takže prežijú reload scény. score nie je static, takže v každom leveli začína od 0, kým levelNumber a totalScore sa prenášajú ďalej."
+    }
+  }
+}

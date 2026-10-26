@@ -1,0 +1,271 @@
+@page "/lab/lander"
+@implements IAsyncDisposable
+@using System.Diagnostics
+@using System.Globalization
+@using SharpDul.Pocket.Localization
+@using SharpDul.Pocket.Logic
+@inject IJSRuntime JS
+@inject Localizer Loc
+
+<PageTitle>SharpDul · Mechanics Lab</PageTitle>
+
+<nav class="top-bar">
+    <a href="">@Loc["home"]</a>
+    <span class="muted">@Loc["mechanicsLab"] · LuaLander</span>
+</nav>
+
+
+<div class="lab-stage">
+    <canvas @ref="canvas" class="lab-canvas"></canvas>
+    <div class="lab-status @StatusClass">@StatusText</div>
+</div>
+
+<div class="lab-hud">
+    <span>@Loc["speed"] <strong>@sim.Speed.ToString("0.0", Inv)</strong> / @F(sim.Tuning.SoftLandingVelocityMagnitude)</span>
+    <span>@Loc["dot"] <strong>@sim.DotVector.ToString("0.00", Inv)</strong> / @sim.Tuning.MinDotVector.ToString("0.00", Inv)</span>
+    <span class="lab-fuel">@Loc["fuel"] <span class="bar"><span class="bar-fill" style="width:@((int)(sim.FuelNormalized * 100))%"></span></span></span>
+</div>
+
+@* The lit lines, right under the game, so you see them while you fly. *@
+<pre class="code lab-live"><code>@foreach (CodeLine line in CodeLines().Where(line => IsLit(line.Key)).DefaultIfEmpty(new CodeLine(null, "// ...")))
+{<span class="code-line @(line.Key != null ? "hl" : "")">@line.Text</span>}</code></pre>
+
+<div class="lab-controls">
+    <button @ref="leftButton" class="lab-key" aria-label="Left">◀</button>
+    <button @ref="upButton" class="lab-key up" aria-label="Thrust">▲</button>
+    <button @ref="rightButton" class="lab-key" aria-label="Right">▶</button>
+</div>
+<button class="big-button" @onclick="Retry">@Loc["retry"]</button>
+<p class="muted lab-intro">@Loc["labIntro"]</p>
+
+<section class="card">
+    <h2>@Loc["tuning"]</h2>
+    @foreach (TuningSlider slider in sliders)
+    {
+        <label class="lab-slider">
+            <span class="lab-slider-label"><code>@slider.Name</code> = <strong>@F(slider.Get(sim.Tuning))</strong></span>
+            <input type="range" min="@slider.Min.ToString(Inv)" max="@slider.Max.ToString(Inv)" step="@slider.Step.ToString(Inv)"
+                   value="@slider.Get(sim.Tuning).ToString(Inv)"
+                   @oninput="e => OnSlider(slider, e)" />
+        </label>
+    }
+    <button class="hint-button" @onclick="ResetValues">@Loc["resetValues"]</button>
+</section>
+
+<section class="card">
+    <h2>@Loc["code"] · Lander.cs</h2>
+    <pre class="code"><code>@foreach (CodeLine line in CodeLines())
+{<span class="code-line @(IsLit(line.Key) ? "hl" : "")">@line.Text</span>}</code></pre>
+</section>
+
+@code {
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+
+    private readonly LanderSim sim = new();
+    private ElementReference canvas;
+    private ElementReference upButton;
+    private ElementReference leftButton;
+    private ElementReference rightButton;
+
+    private CancellationTokenSource? loopCancel;
+    private LanderSim.LandingResult? result;
+    private bool upForce;
+    private bool leftForce;
+    private bool rightForce;
+    private string? touchedKey;
+    private double touchedAt;
+    private readonly Stopwatch clock = Stopwatch.StartNew();
+
+    private record TuningSlider(string Key, string Name, float Min, float Max, float Step,
+        Func<LanderTuning, float> Get, Action<LanderTuning, float> Set);
+
+    private record CodeLine(string? Key, string Text);
+
+    private readonly TuningSlider[] sliders =
+    {
+        new("force", "force", 0f, 1500f, 10f, t => t.Force, (t, v) => t.Force = v),
+        new("turn", "turnSpeed", 0f, 300f, 5f, t => t.TurnSpeed, (t, v) => t.TurnSpeed = v),
+        new("gravity", "GRAVITY_NORMAL", 0f, 2f, 0.05f, t => t.GravityNormal, (t, v) => t.GravityNormal = v),
+        new("fuelMax", "fuelAmountMax", 1f, 30f, 1f, t => t.FuelAmountMax, (t, v) => t.FuelAmountMax = v),
+        new("soft", "softLandingVelocityMagnitude", 0.5f, 10f, 0.5f, t => t.SoftLandingVelocityMagnitude, (t, v) => t.SoftLandingVelocityMagnitude = v),
+        new("minDot", "minDotVector", 0.5f, 1f, 0.01f, t => t.MinDotVector, (t, v) => t.MinDotVector = v),
+    };
+
+    private IEnumerable<CodeLine> CodeLines()
+    {
+        LanderTuning t = sim.Tuning;
+        yield return new("gravity", $"private const float GRAVITY_NORMAL = {F(t.GravityNormal)}f;");
+        yield return new("fuelMax", $"private float fuelAmountMax = {F(t.FuelAmountMax)}f;");
+        yield return new(null, "");
+        yield return new(null, "// FixedUpdate(), while you hold a key:");
+        yield return new("consume", "fuelAmount -= fuelConsumptionAmount * Time.deltaTime;");
+        yield return new("force", $"float force = {F(t.Force)}f;");
+        yield return new("addForce", "landerRigidbody2D.AddForce(force * transform.up * Time.deltaTime);");
+        yield return new("turn", $"float turnSpeed = +{F(t.TurnSpeed)}f;");
+        yield return new("addTorque", "landerRigidbody2D.AddTorque(turnSpeed * Time.deltaTime);");
+        yield return new(null, "");
+        yield return new(null, "// OnCollisionEnter2D(), on the landing pad:");
+        yield return new("soft", $"float softLandingVelocityMagnitude = {F(t.SoftLandingVelocityMagnitude)}f;");
+        yield return new("softCheck", "if (collision2D.relativeVelocity.magnitude > softLandingVelocityMagnitude)");
+        yield return new("minDot", $"float minDotVector = {F(t.MinDotVector)}f;");
+        yield return new("dotCheck", "if (dotVector < minDotVector)");
+    }
+
+    private bool IsLit(string? key)
+    {
+        if (key == null)
+        {
+            return false;
+        }
+
+        bool sliderRecentlyTouched = touchedKey != null && clock.Elapsed.TotalSeconds - touchedAt < 1.5;
+        if (sliderRecentlyTouched && key == touchedKey)
+        {
+            return true;
+        }
+
+        bool anyKey = upForce || leftForce || rightForce;
+        return key switch
+        {
+            "consume" => anyKey,
+            "force" or "addForce" => upForce,
+            "turn" or "addTorque" => leftForce || rightForce,
+            "softCheck" => result?.Type == LanderSim.LandingType.TooFastLanding,
+            "dotCheck" => result?.Type == LanderSim.LandingType.TooSteepAngle,
+            _ => false,
+        };
+    }
+
+    protected override void OnInitialized()
+    {
+        // Same listener style as LanderVisuals: the sim only fires events, the page reacts.
+        sim.OnBeforeForce += (_, _) => { upForce = false; leftForce = false; rightForce = false; };
+        sim.OnUpForce += (_, _) => upForce = true;
+        sim.OnLeftForce += (_, _) => leftForce = true;
+        sim.OnRightForce += (_, _) => rightForce = true;
+        sim.OnLanded += (_, landing) => result = landing;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("sharpDulLab.attach", upButton, leftButton, rightButton);
+        loopCancel = new CancellationTokenSource();
+        _ = RunLoopAsync(loopCancel.Token);
+    }
+
+    // Fixed timestep like Unity: as many 0.02 s FixedUpdates as real time has passed.
+    private async Task RunLoopAsync(CancellationToken cancel)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
+        double simulated = clock.Elapsed.TotalSeconds;
+        LanderInput input = default;
+        int frame = 0;
+
+        while (await timer.WaitForNextTickAsync(cancel))
+        {
+            double now = clock.Elapsed.TotalSeconds;
+            int steps = 0;
+            while (simulated + LanderSim.FixedDeltaTime <= now && steps < 5)
+            {
+                sim.FixedUpdate(input);
+                simulated += LanderSim.FixedDeltaTime;
+                steps++;
+            }
+            if (steps == 5)
+            {
+                simulated = now;   // the tab was asleep - do not fast-forward
+            }
+
+            JsInput js = await JS.InvokeAsync<JsInput>("sharpDulLab.frame", cancel, canvas, DrawState());
+            input = new LanderInput { Up = js.Up, Left = js.Left, Right = js.Right };
+
+            if (++frame % 4 == 0)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private object DrawState() => new
+    {
+        x = sim.X,
+        y = sim.Y,
+        vx = sim.VelocityX,
+        vy = sim.VelocityY,
+        angle = sim.Angle,
+        upForce,
+        leftForce,
+        rightForce,
+        crashed = result != null && result.Type != LanderSim.LandingType.Successful,
+        worldHalfWidth = LanderSim.WorldHalfWidth,
+        padHalfWidth = LanderSim.PadHalfWidth,
+        bodyWidth = LanderSim.BodyWidth,
+        bodyHeight = LanderSim.BodyHeight,
+    };
+
+    private class JsInput
+    {
+        public bool Up { get; set; }
+        public bool Left { get; set; }
+        public bool Right { get; set; }
+    }
+
+    private void OnSlider(TuningSlider slider, ChangeEventArgs e)
+    {
+        if (float.TryParse(e.Value?.ToString(), NumberStyles.Float, Inv, out float value))
+        {
+            slider.Set(sim.Tuning, value);
+            touchedKey = slider.Key;
+            touchedAt = clock.Elapsed.TotalSeconds;
+        }
+    }
+
+    private void Retry()
+    {
+        result = null;
+        sim.Reset();
+    }
+
+    private void ResetValues()
+    {
+        LanderTuning defaults = new();
+        foreach (TuningSlider slider in sliders)
+        {
+            slider.Set(sim.Tuning, slider.Get(defaults));
+        }
+        touchedKey = null;
+        Retry();
+    }
+
+    private string StatusText => result?.Type switch
+    {
+        LanderSim.LandingType.Successful => Loc.Format("landedOk", result.Score),
+        LanderSim.LandingType.TooFastLanding => Loc.Format("landedFast", result.LandingSpeed.ToString("0.0", Inv), F(sim.Tuning.SoftLandingVelocityMagnitude)),
+        LanderSim.LandingType.TooSteepAngle => Loc.Format("landedSteep", result.DotVector.ToString("0.00", Inv), sim.Tuning.MinDotVector.ToString("0.00", Inv)),
+        LanderSim.LandingType.WrongLandingArea => Loc["landedTerrain"],
+        LanderSim.LandingType.LostInSpace => Loc["lost"],
+        _ => sim.CurrentState == LanderSim.State.WaitingToStart ? Loc["labPress"]
+            : sim.Fuel <= 0f ? Loc["labNoFuel"] : Loc["labFlying"],
+    };
+
+    private string StatusClass => result == null ? "" : result.Type == LanderSim.LandingType.Successful ? "right" : "wrong";
+
+    private static string F(float value) => value.ToString("0.##", Inv);
+
+    public async ValueTask DisposeAsync()
+    {
+        loopCancel?.Cancel();
+        try
+        {
+            await JS.InvokeVoidAsync("sharpDulLab.detach");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

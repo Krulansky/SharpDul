@@ -61,3 +61,23 @@ public class ContentIndex
 {
     public List<string> Packs { get; set; } = new();
 }
+
+/// <summary>
+/// wwwroot/content/&lt;pack&gt;.&lt;lang&gt;.json: translated text for a pack. Anything missing falls
+/// back to English. Code, answers and sources are never translated.
+/// </summary>
+public class PackTranslation
+{
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public Dictionary<string, QuestionTranslation> Questions { get; set; } = new();
+}
+
+public class QuestionTranslation
+{
+    public string? Context { get; set; }
+    public string? Prompt { get; set; }
+    public string? Hint { get; set; }
+    public List<string>? Options { get; set; }
+    public string? Explanation { get; set; }
+}

@@ -1,5 +1,35 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using SharpDul.Pocket.Localization
+@inject Localizer Loc
 
 <main class="page">
-    @Body
+    @if (ready)
+    {
+        @* Pages take the language as a cascading value, so a switch re-renders them. *@
+        <CascadingValue Value="Loc.Current">
+            @Body
+        </CascadingValue>
+    }
 </main>
+
+@code {
+    private bool ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Loc.InitAsync();
+        Loc.OnLanguageChanged += Loc_OnLanguageChanged;
+        ready = true;
+    }
+
+    private void Loc_OnLanguageChanged(object? sender, EventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Loc.OnLanguageChanged -= Loc_OnLanguageChanged;
+    }
+}

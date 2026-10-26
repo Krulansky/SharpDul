@@ -259,3 +259,70 @@ a { color: inherit; }
         content: var(--blazor-load-percentage-text, "Loading");
     }
 
+
+/* Language switch */
+.lang-switch { display: flex; gap: 4px; }
+.lang-switch button {
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+.lang-switch button.active { color: var(--accent-text); background: var(--accent); border-color: var(--accent); }
+
+/* Mechanics Lab */
+.lab-intro { line-height: 1.4; }
+.lab-stage { position: relative; margin-bottom: 8px; }
+.lab-canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 20 / 19;
+    border-radius: 16px;
+    touch-action: none;
+}
+.lab-status {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 12px;
+    color: #fafafa;
+    font-weight: 600;
+    text-shadow: 0 1px 3px #000;
+}
+.lab-status.right { color: #86efac; }
+.lab-status.wrong { color: #fca5a5; }
+.lab-hud {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+}
+.lab-fuel { display: flex; align-items: center; gap: 6px; flex: 1; max-width: 35%; }
+.lab-fuel .bar { flex: 1; margin: 0; height: 8px; display: block; }
+.lab-fuel .bar-fill { display: block; }
+.lab-controls { display: flex; gap: 12px; margin-bottom: 12px; }
+.lab-key {
+    flex: 1;
+    height: 64px;
+    font-size: 1.6rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: pointer;
+}
+.lab-key.up { flex: 1.4; }
+.lab-key.pressed { background: var(--accent); color: var(--accent-text); }
+.lab-slider { display: block; margin-bottom: 14px; }
+.lab-slider-label { display: block; font-size: 0.9rem; margin-bottom: 4px; overflow-wrap: anywhere; }
+.lab-slider input { width: 100%; accent-color: var(--accent); }
+.lab-live { margin-bottom: 12px; height: calc(4 * 1.4em + 24px); overflow: hidden; font-size: 0.72rem; }
