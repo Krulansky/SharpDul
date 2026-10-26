@@ -1,6 +1,10 @@
 # SharpDul (#Dul) - Agent Instructions
 
-Read this first, then `PROJECT_STATE.md` (where we are) and `DESIGN_BRIEF.md` (the app). This file is in the repository on purpose:
+Read this first, then `PROJECT_STATE.md` (where we are) and `DESIGN_BRIEF.md` (the app).
+`GAMEDEVNOTES.md` is the **travelling notebook** of general game-design, game-feel and Unity
+lessons from every project (moved here from FerryHeist on 2026-10-26). Whenever any project
+learns something that would apply to any game, add an entry there. `knowledge/` holds notes
+about one source project each. This file is in the repository on purpose:
 it is the only context that reaches every machine. Do not rely on memory from other sessions.
 
 ## What this is

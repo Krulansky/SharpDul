@@ -45,6 +45,7 @@ src/SharpDul.Pocket/
   Services/   ContentLibrary (loads packs), ProgressStore (localStorage, export/import)
   Pages/      Home, Quiz, Backup, Lab (UI only - they call Services / Logic)
   wwwroot/content/   index.json + one JSON per content pack
+GAMEDEVNOTES.md   the travelling notebook (moved from FerryHeist 2026-10-26)
 knowledge/   study notes per source project (e.g. falling-frenzy.md) - raw material for packs
 .github/workflows/deploy-pages.yml   publish to GitHub Pages on every push to main
 ```
