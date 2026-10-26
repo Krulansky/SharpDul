@@ -32,8 +32,15 @@ public class Question
     public string Id { get; set; } = "";
     public Difficulty Difficulty { get; set; }
     public QuestionType Type { get; set; }
+    /// <summary>Plain-language setup: where this code lives and when it runs in the game.</summary>
+    public string Context { get; set; } = "";
     public string Prompt { get; set; } = "";
+    /// <summary>A trimmed snippet in which the answer can be found.</summary>
     public string? Code { get; set; }
+    /// <summary>1-based lines of Code that hold the answer; shown highlighted.</summary>
+    public List<int> Highlight { get; set; } = new();
+    /// <summary>Points at what to look for in the code without giving the answer away.</summary>
+    public string Hint { get; set; } = "";
     public List<string> Options { get; set; } = new();
     public int AnswerIndex { get; set; }
     public string Explanation { get; set; } = "";

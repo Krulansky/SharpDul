@@ -15,12 +15,15 @@ Session handoff between machines and sessions. Keep it short and current.
 - XP: Easy 10, Medium 20, Hard 30, wrong answer 2. Level N needs 50*N*(N-1) total XP.
 - Backup: Export (iPhone share sheet -> Save to Files; download elsewhere) and Import
   (replaces progress on the device).
-- Content: `lualander-easy.json` - 10 Easy questions from LuaLander.
+- Content: `lualander-easy.json` - 10 Easy questions from LuaLander, rewritten 2026-10-26
+  after director feedback: each has context, highlighted answer lines and a hint
+  ("Show hint" button, no XP penalty).
 - Look: neutral grey placeholders. The director designs the visual identity.
 
 Verified in headless Chromium at iPhone 13 size, served under `/SharpDul/` like GitHub Pages:
 a full Daily session, XP/active day saved across reload, export -> wipe -> import.
-**Not yet verified on a real iPhone.**
+Live at https://krulansky.github.io/SharpDul/ - director confirmed on the iPhone
+(2026-10-26) that it installs and progress survives. Export to Files not yet confirmed.
 
 ## Layout
 
@@ -41,9 +44,11 @@ src/SharpDul.Pocket/
 3. Question ids must be unique and must never change - progress is stored by id.
 4. List the correct answer first in `options` with `answerIndex: 0`; the quiz shuffles them
    (except True/False).
+5. Follow the content rules in `CLAUDE.md`: context, snippet that contains the answer,
+   `highlight` (1-based snippet lines), `hint`.
 
 ## Next
 
-1. Director tests on the iPhone (Safari -> Share -> Add to Home Screen).
+1. Director retries the rewritten quiz on the iPhone.
 2. Mechanics Lab: lander simulation with sliders on the real `Lander.cs` values.
 3. More LuaLander questions, then Medium level.

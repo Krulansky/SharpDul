@@ -40,10 +40,26 @@ else
 {
     <section class="card">
         <span class="tag">@Current.Difficulty</span>
-        <p class="prompt">@Current.Prompt</p>
+        @if (!string.IsNullOrEmpty(Current.Context))
+        {
+            <p class="context">@Current.Context</p>
+        }
         @if (!string.IsNullOrEmpty(Current.Code))
         {
-            <pre class="code"><code>@Current.Code</code></pre>
+            <pre class="code"><code>@for (int i = 0; i < codeLines.Length; i++)
+{<span class="code-line @(Current.Highlight.Contains(i + 1) ? "hl" : "")">@codeLines[i]</span>}</code></pre>
+        }
+        <p class="prompt">@Current.Prompt</p>
+        @if (!string.IsNullOrEmpty(Current.Hint) && chosenIndex == null)
+        {
+            @if (showHint)
+            {
+                <p class="hint">💡 @Current.Hint</p>
+            }
+            else
+            {
+                <button class="hint-button" @onclick="() => showHint = true">Show hint</button>
+            }
         }
     </section>
 
@@ -73,6 +89,8 @@ else
     private int index;
     private List<int> optionOrder = new();
     private int? chosenIndex;
+    private bool showHint;
+    private string[] codeLines = Array.Empty<string>();
     private int correctCount;
     private int xpGained;
 
@@ -103,10 +121,13 @@ else
     private void PrepareQuestion()
     {
         chosenIndex = null;
+        showHint = false;
         if (IsFinished || questions!.Count == 0)
         {
             return;
         }
+
+        codeLines = (Current.Code ?? "").Split('\n');
 
         // Content packs list the right answer first; shuffle so its position gives nothing away.
         // True/false keeps its natural order.

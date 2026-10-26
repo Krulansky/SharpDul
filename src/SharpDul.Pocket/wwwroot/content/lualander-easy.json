@@ -1,85 +1,54 @@
 {
   "id": "lualander-easy",
   "title": "LuaLander",
-  "description": "Easy questions from the first game: singletons, events, physics and particles.",
+  "description": "Easy questions from the first game: landing, fuel, coins, events and particles.",
   "questions": [
-    {
-      "id": "lualander.singleton-instance",
-      "difficulty": "Easy",
-      "type": "MultipleChoice",
-      "prompt": "Which pattern does this line set up?",
-      "code": "public static Lander Instance { get; private set; }",
-      "options": [
-        "Singleton - one Lander that any script can reach through Lander.Instance",
-        "Object pooling",
-        "A ScriptableObject asset",
-        "Dependency injection through the Inspector"
-      ],
-      "answerIndex": 0,
-      "explanation": "A static Instance property with a private setter is the singleton pattern. Lander sets it in Awake (Instance = this), and GameManager then reaches it with Lander.Instance.OnLanded += ...",
-      "source": {
-        "project": "LuaLander",
-        "file": "Assets/Scripts/Lander.cs",
-        "lineStart": 10,
-        "lineEnd": 10
-      }
-    },
-    {
-      "id": "lualander.null-conditional-invoke",
-      "difficulty": "Easy",
-      "type": "WhatDoesItDo",
-      "prompt": "What does the ?. do here?",
-      "code": "OnBeforeForce?.Invoke(this, EventArgs.Empty);",
-      "options": [
-        "Fires the event only if at least one listener is subscribed, so it never throws a NullReferenceException",
-        "Fires the event on the next frame",
-        "Fires the event and waits until every listener finishes",
-        "Checks whether the Lander is null before firing"
-      ],
-      "answerIndex": 0,
-      "explanation": "An event with no subscribers is null. ?. calls Invoke only when it is not null - the safe way to fire C# events.",
-      "source": {
-        "project": "LuaLander",
-        "file": "Assets/Scripts/Lander.cs",
-        "lineStart": 66,
-        "lineEnd": 66
-      }
-    },
     {
       "id": "lualander.fuel-deltatime",
       "difficulty": "Easy",
-      "type": "WhatDoesItDo",
-      "prompt": "fuelConsumptionAmount is 1f. While the player holds thrust, how fast does fuel drop?",
-      "code": "float fuelConsumptionAmount = 1f;\nfuelAmount -= fuelConsumptionAmount * Time.deltaTime;",
+      "type": "MultipleChoice",
+      "context": "This runs every moment you hold a thrust key. The tank starts full at fuelAmountMax = 10.",
+      "prompt": "With a full tank, about how long can you keep thrusting?",
+      "code": "private void ConsumeFuel()\n{\n    float fuelConsumptionAmount = 1f;\n    fuelAmount -= fuelConsumptionAmount * Time.deltaTime;\n}",
+      "highlight": [
+        4
+      ],
+      "hint": "Time.deltaTime turns \"per frame\" into \"per second\". So the tank loses 1 per second - and it holds 10.",
       "options": [
-        "About 1 unit per second, no matter the frame rate",
-        "1 unit every frame",
-        "1 unit every physics step, so faster on a faster PC",
-        "It drops only once, when thrust starts"
+        "About 10 seconds",
+        "About 1 second",
+        "10 frames - a split second",
+        "Forever - fuel never runs out"
       ],
       "answerIndex": 0,
-      "explanation": "Multiplying by Time.deltaTime turns 'per frame' into 'per second'. With fuelAmountMax = 10f, a full tank lasts about 10 seconds of thrust.",
+      "explanation": "Each second costs 1 fuel, and a full tank is 10, so about 10 seconds of thrust. Without Time.deltaTime it would drain 1 per frame and be empty in a blink.",
       "source": {
         "project": "LuaLander",
         "file": "Assets/Scripts/Lander.cs",
-        "lineStart": 242,
-        "lineEnd": 243
+        "lineStart": 240,
+        "lineEnd": 244
       }
     },
     {
       "id": "lualander.soft-landing-speed",
       "difficulty": "Easy",
-      "type": "WhatDoesItDo",
-      "prompt": "The lander touches a landing pad with a relative velocity magnitude of 5. What happens?",
-      "code": "float softLandingVelocityMagnitude = 4f;\nfloat relativeVelocityMagnitude = collision2D.relativeVelocity.magnitude;\nif (collision2D.relativeVelocity.magnitude > softLandingVelocityMagnitude)\n{\n    // Landed too hard\n    ...LandingType.TooFastLanding...\n    SetState(State.GameOver);\n    return;\n}",
+      "type": "MultipleChoice",
+      "context": "This runs when the lander touches a landing pad. It checks how fast you came in.",
+      "prompt": "You touch the pad at speed 5. What happens?",
+      "code": "float softLandingVelocityMagnitude = 4f;\nif (collision2D.relativeVelocity.magnitude > softLandingVelocityMagnitude)\n{\n    // Landed too hard\n    SetState(State.GameOver);\n    return;\n}",
+      "highlight": [
+        2,
+        5
+      ],
+      "hint": "Compare the two numbers: your speed (5) and softLandingVelocityMagnitude (4). Is 5 bigger?",
       "options": [
-        "Crash - TooFastLanding, because 5 > 4",
-        "Successful landing with a lower score",
-        "Nothing - the speed is checked only on the terrain",
-        "The lander bounces and gets another try"
+        "Crash - game over, you landed too hard",
+        "Successful landing",
+        "Successful landing with a speed bonus",
+        "Nothing - the lander bounces"
       ],
       "answerIndex": 0,
-      "explanation": "Anything faster than 4 counts as too hard. The early return means the angle check and score below never run.",
+      "explanation": "5 > 4, so the if is true and the game ends with TooFastLanding. To land safely you must touch down at speed 4 or less.",
       "source": {
         "project": "LuaLander",
         "file": "Assets/Scripts/Lander.cs",
@@ -88,40 +57,52 @@
       }
     },
     {
-      "id": "lualander.dot-upright",
+      "id": "lualander.steep-angle",
       "difficulty": "Easy",
       "type": "MultipleChoice",
-      "prompt": "When does dotVector equal 1?",
-      "code": "float dotVector = Vector2.Dot(Vector2.up, transform.up);\nfloat minDotVector = .90f;",
+      "context": "This also runs on landing. Vector2.up points straight up; transform.up is where the top of the lander points. Their dot product is 1 when the lander is perfectly upright and gets smaller the more it tilts.",
+      "prompt": "You land tilted far onto one side. What does this code decide?",
+      "code": "float dotVector = Vector2.Dot(Vector2.up, transform.up);\nfloat minDotVector = .90f;\nif (dotVector < minDotVector)\n{\n    // Landed on a too steep angle!\n    SetState(State.GameOver);\n    return;\n}",
+      "highlight": [
+        3,
+        5
+      ],
+      "hint": "Tilted far means dotVector is much smaller than 1. Is that below 0.90?",
       "options": [
-        "When the lander stands perfectly upright",
-        "When the lander is upside down",
-        "When the lander lies on its side",
-        "When the lander moves upwards at speed 1"
+        "Too steep - game over",
+        "Successful landing",
+        "The lander straightens itself up",
+        "The score is doubled"
       ],
       "answerIndex": 0,
-      "explanation": "The dot product of two unit vectors is 1 when they point the same way, 0 at 90°, -1 when opposite. Below 0.90 the landing counts as TooSteepAngle.",
+      "explanation": "A big tilt pushes dotVector well under 0.90, so the if is true: TooSteepAngle, game over. You have to land nearly upright.",
       "source": {
         "project": "LuaLander",
         "file": "Assets/Scripts/Lander.cs",
         "lineStart": 161,
-        "lineEnd": 162
+        "lineEnd": 179
       }
     },
     {
       "id": "lualander.trygetcomponent-terrain",
       "difficulty": "Easy",
-      "type": "WhatDoesItDo",
-      "prompt": "The lander hits a rock that has no LandingPad component. What does this code do?",
-      "code": "if (!collision2D.gameObject.TryGetComponent(out LandingPad landingPad))\n{\n    Debug.Log(\"Crashed on the Terrain\");\n    ...LandingType.WrongLandingArea...\n    SetState(State.GameOver);\n    return;\n}",
+      "type": "MultipleChoice",
+      "context": "This runs whenever the lander bumps into anything. Only landing pads have a LandingPad component.",
+      "prompt": "You fly into a rock. What happens?",
+      "code": "if (!collision2D.gameObject.TryGetComponent(out LandingPad landingPad))\n{\n    Debug.Log(\"Crashed on the Terrain\");\n    SetState(State.GameOver);\n    return;\n}",
+      "highlight": [
+        1,
+        3
+      ],
+      "hint": "The ! means NOT. Read the first line as: \"if the thing I hit does NOT have a LandingPad...\"",
       "options": [
-        "TryGetComponent returns false, so the lander crashes with WrongLandingArea",
-        "It throws a NullReferenceException",
-        "It adds a LandingPad to the rock",
-        "It ignores the collision"
+        "You crash - \"Crashed on the Terrain\"",
+        "You land on the rock",
+        "The rock is destroyed",
+        "Nothing - rocks are ignored"
       ],
       "answerIndex": 0,
-      "explanation": "TryGetComponent returns true and fills the out variable only if the component exists. One call both checks and fetches.",
+      "explanation": "A rock has no LandingPad, so TryGetComponent returns false, ! makes it true, and the lander crashes. TryGetComponent checks for a component and fetches it in one call.",
       "source": {
         "project": "LuaLander",
         "file": "Assets/Scripts/Lander.cs",
@@ -130,38 +111,132 @@
       }
     },
     {
+      "id": "lualander.fuel-clamp",
+      "difficulty": "Easy",
+      "type": "MultipleChoice",
+      "context": "This runs when the lander flies through a fuel canister. The tank holds at most fuelAmountMax = 10.",
+      "prompt": "You have 8 fuel and grab a canister. How much fuel do you have now?",
+      "code": "float addFuelAmount = 10f;\nfuelAmount += addFuelAmount;\nif (fuelAmount > fuelAmountMax)\n{\n    fuelAmount = fuelAmountMax;\n}",
+      "highlight": [
+        3,
+        5
+      ],
+      "hint": "8 + 10 = 18. Now look at the if: what happens when fuel is more than the maximum?",
+      "options": [
+        "10 - a full tank",
+        "18",
+        "8 - nothing changes",
+        "20"
+      ],
+      "answerIndex": 0,
+      "explanation": "8 + 10 = 18, but the if caps it at fuelAmountMax, so the tank is simply full: 10.",
+      "source": {
+        "project": "LuaLander",
+        "file": "Assets/Scripts/Lander.cs",
+        "lineStart": 212,
+        "lineEnd": 217
+      }
+    },
+    {
+      "id": "lualander.coin-score",
+      "difficulty": "Easy",
+      "type": "MultipleChoice",
+      "context": "GameManager.cs listens for the lander's OnCoinPickup event. This method runs every time you collect a coin.",
+      "prompt": "You collect one coin. What happens to your score?",
+      "code": "private void Lander_OnCoinPickup(object sender, System.EventArgs e)\n{\n    AddScore(500);\n}",
+      "highlight": [
+        3
+      ],
+      "hint": "Look at the number inside AddScore( ).",
+      "options": [
+        "It goes up by 500",
+        "It goes up by 1",
+        "It doubles",
+        "Nothing - coins only refill fuel"
+      ],
+      "answerIndex": 0,
+      "explanation": "Every coin calls AddScore(500). The lander only announces \"I picked up a coin\"; GameManager decides what a coin is worth.",
+      "source": {
+        "project": "LuaLander",
+        "file": "Assets/Scripts/GameManager.cs",
+        "lineStart": 98,
+        "lineEnd": 101
+      }
+    },
+    {
+      "id": "lualander.singleton-instance",
+      "difficulty": "Easy",
+      "type": "MultipleChoice",
+      "context": "This is the top of Lander.cs. GameManager, the UI and the audio scripts all need to talk to the one lander in the scene.",
+      "prompt": "How do the other scripts find the lander?",
+      "code": "public static Lander Instance { get; private set; }\n\nprivate void Awake()\n{\n    Instance = this;\n}",
+      "highlight": [
+        1,
+        5
+      ],
+      "hint": "Instance = this stores the lander in a static property. Static means you reach it through the class name: Lander.____",
+      "options": [
+        "They write Lander.Instance",
+        "Each one creates its own new Lander",
+        "They search the whole scene every frame",
+        "The lander finds them and calls them"
+      ],
+      "answerIndex": 0,
+      "explanation": "This is the singleton pattern: in Awake the lander stores itself in the static Instance, and any script can then write Lander.Instance - e.g. GameManager does Lander.Instance.OnLanded += ...",
+      "source": {
+        "project": "LuaLander",
+        "file": "Assets/Scripts/Lander.cs",
+        "lineStart": 10,
+        "lineEnd": 57
+      }
+    },
+    {
       "id": "lualander.visuals-listen",
       "difficulty": "Easy",
       "type": "MultipleChoice",
-      "prompt": "Which class switches the thruster particles on when the player thrusts?",
-      "code": "lander.OnUpForce += Lander_OnUpForce;\nlander.OnLeftForce += Lander_OnLeftForce;\nlander.OnRightForce += Lander_OnRightForce;\nlander.OnBeforeForce += Lander_OnBeforeForce;",
+      "context": "This is LanderVisuals.cs - the script that owns the thruster flames. Lander.cs only fires the event OnUpForce when you thrust; it never touches particles.",
+      "prompt": "Who turns the flames on when you thrust?",
+      "code": "lander.OnUpForce += Lander_OnUpForce;\n\n// ...\n\nprivate void Lander_OnUpForce(object sender, System.EventArgs e)\n{\n    SetEnabledParticleSystem(middleThrusterParticleSystem, true);\n}",
+      "highlight": [
+        1,
+        7
+      ],
+      "hint": "+= means \"when this event fires, call my method\". Which script contains that line?",
       "options": [
-        "LanderVisuals - it listens to Lander's events",
-        "Lander - right after AddForce",
+        "LanderVisuals - it listens to OnUpForce and switches the particles on",
+        "Lander.cs, right after it adds the force",
         "GameManager",
-        "The ParticleSystem decides by itself"
+        "The ParticleSystem turns itself on"
       ],
       "answerIndex": 0,
-      "explanation": "Lander only fires events and never touches visuals. LanderVisuals subscribes and reacts. Logic stays separate from visuals - the same split FerryHeist uses.",
+      "explanation": "LanderVisuals subscribes to OnUpForce and reacts by enabling the particles. Logic (Lander) and visuals (LanderVisuals) stay separate - the same split FerryHeist uses.",
       "source": {
         "project": "LuaLander",
         "file": "Assets/Scripts/LanderVisuals.cs",
         "lineStart": 19,
-        "lineEnd": 22
+        "lineEnd": 70
       }
     },
     {
-      "id": "lualander.emission-disable",
+      "id": "lualander.emission-fade",
       "difficulty": "Easy",
-      "type": "TrueFalse",
-      "prompt": "True or false: SetEnabledParticleSystem(..., false) destroys the particle system.",
-      "code": "ParticleSystem.EmissionModule emissionModule = particleSystem.emission;\nemissionModule.enabled = enabled;",
-      "options": [
-        "True",
-        "False"
+      "type": "MultipleChoice",
+      "context": "When you let go of thrust, LanderVisuals switches emission off. The flame does not vanish at once - it fades out.",
+      "prompt": "Why does the flame fade instead of disappearing instantly?",
+      "code": "private void SetEnabledParticleSystem(ParticleSystem particleSystem, bool enabled)\n{\n    ParticleSystem.EmissionModule emissionModule = particleSystem.emission;\n    emissionModule.enabled = enabled;\n}",
+      "highlight": [
+        3,
+        4
       ],
-      "answerIndex": 1,
-      "explanation": "False. Disabling the emission module only stops new particles from spawning. Particles already alive finish their lifetime, so the flame fades instead of vanishing.",
+      "hint": "Emission is the part of a particle system that spawns new particles. What about the particles that already exist?",
+      "options": [
+        "Emission off only stops NEW particles - the ones already flying live out their lifetime",
+        "The particle system is slowly destroyed",
+        "Unity plays a fade-out animation",
+        "The lander keeps thrusting for a moment"
+      ],
+      "answerIndex": 0,
+      "explanation": "Turning emission off stops spawning; particles already alive finish their lifetime. That is why the flame fades naturally - no extra animation needed.",
       "source": {
         "project": "LuaLander",
         "file": "Assets/Scripts/LanderVisuals.cs",
@@ -172,41 +247,28 @@
     {
       "id": "lualander.static-level",
       "difficulty": "Easy",
-      "type": "TrueFalse",
-      "prompt": "True or false: levelNumber keeps its value when the next level's scene loads.",
-      "code": "private static int levelNumber = 1;\nprivate static int totalScore = 0;\n\npublic static void ResetStaticData()\n{\n    levelNumber = 1;\n    totalScore = 0;\n}",
+      "type": "MultipleChoice",
+      "context": "GameManager.cs keeps the level number here. Every new level reloads the whole scene, which creates a fresh GameManager object.",
+      "prompt": "You finish level 1 and the scene reloads. How does the game still know you are on level 2?",
+      "code": "private static int levelNumber = 1;\nprivate static int totalScore = 0;\nprivate int score;",
+      "highlight": [
+        1,
+        2
+      ],
+      "hint": "Compare levelNumber with score on the last line. Which word does score not have?",
       "options": [
-        "True",
-        "False"
+        "levelNumber is static - it belongs to the class, not to the object that gets reloaded",
+        "Unity saves it to a file",
+        "It doesn't - you always restart at level 1",
+        "The Inspector remembers it"
       ],
       "answerIndex": 0,
-      "explanation": "True. Static fields belong to the class, not to the GameManager object, so they survive a scene reload. That is why ResetStaticData exists - to start fresh from the main menu.",
+      "explanation": "Static fields belong to the class, so they survive the scene reload. score is not static, so it starts again at 0 each level, while levelNumber and totalScore carry over.",
       "source": {
         "project": "LuaLander",
         "file": "Assets/Scripts/GameManager.cs",
         "lineStart": 12,
-        "lineEnd": 19
-      }
-    },
-    {
-      "id": "lualander.fuel-clamp",
-      "difficulty": "Easy",
-      "type": "WhatDoesItDo",
-      "prompt": "The lander has 8 fuel and picks up a fuel canister. How much fuel does it have afterwards?",
-      "code": "float addFuelAmount = 10f;\nfuelAmount += addFuelAmount;\nif (fuelAmount > fuelAmountMax)\n{\n    fuelAmount = fuelAmountMax;\n}",
-      "options": [
-        "10 - the tank is capped at fuelAmountMax",
-        "18",
-        "8 - the pickup only works on an empty tank",
-        "20"
-      ],
-      "answerIndex": 0,
-      "explanation": "8 + 10 = 18, but the if clamps it to fuelAmountMax (10f). Mathf.Min(fuelAmount + addFuelAmount, fuelAmountMax) would do the same in one line.",
-      "source": {
-        "project": "LuaLander",
-        "file": "Assets/Scripts/Lander.cs",
-        "lineStart": 212,
-        "lineEnd": 217
+        "lineEnd": 28
       }
     }
   ]
