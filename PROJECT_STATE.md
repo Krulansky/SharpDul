@@ -45,6 +45,7 @@ src/SharpDul.Pocket/
   Services/   ContentLibrary (loads packs), ProgressStore (localStorage, export/import)
   Pages/      Home, Quiz, Backup, Lab (UI only - they call Services / Logic)
   wwwroot/content/   index.json + one JSON per content pack
+knowledge/   study notes per source project (e.g. falling-frenzy.md) - raw material for packs
 .github/workflows/deploy-pages.yml   publish to GitHub Pages on every push to main
 ```
 
@@ -63,3 +64,5 @@ src/SharpDul.Pocket/
 1. Director tries the Mechanics Lab and the language switch on the iPhone.
 2. More LuaLander questions, then Medium level (`?.Invoke`, dot product, SetActive vs events).
 3. Particle Lab (sandbox + "recreate this effect").
+4. Falling Frenzy (GameDevTV course): notes in `knowledge/falling-frenzy.md`; content pack
+   from its quiz ideas; later the director rebuilds it as an own project with the agent.
