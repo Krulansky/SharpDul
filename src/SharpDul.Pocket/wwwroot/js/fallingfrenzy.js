@@ -69,7 +69,7 @@ window.sharpDulFrenzy = (function () {
         }
 
         // Player (Cube 3 x 0.5).
-        if (s.stage >= 2) {
+        if (s.showPlayer) {
             ctx.fillStyle = s.playerIsTrigger ? "rgba(63,63,70,0.75)" : "#3f3f46";
             ctx.fillRect(toX(s.playerX - s.playerHalfWidth), toY(s.playerY + s.playerHalfHeight),
                 s.playerHalfWidth * 2 * scale, s.playerHalfHeight * 2 * scale);

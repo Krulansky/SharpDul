@@ -1,340 +1,47 @@
 @page "/lab/falling-frenzy"
-@implements IAsyncDisposable
-@using System.Diagnostics
-@using System.Globalization
+@using SharpDul.Pocket.Components
 @using SharpDul.Pocket.Localization
 @using SharpDul.Pocket.Logic
-@inject IJSRuntime JS
 @inject Localizer Loc
 
 <PageTitle>SharpDul · Falling Frenzy Lab</PageTitle>
 
 <nav class="top-bar">
-    <a href="course/falling-frenzy/@StepNumberForStage">@Loc["backToCourse"]</a>
+    <a href="course/falling-frenzy/@stage">@Loc["backToCourse"]</a>
     <span class="muted">@Loc["mechanicsLab"] · Falling Frenzy</span>
 </nav>
 
 <label class="lab-stage-select">
     @Loc["previewAfterStep"]
-    <select value="@sim.Stage" @onchange="OnStageChanged">
-        @for (int stage = 1; stage <= 10; stage++)
+    <select value="@stage" @onchange="OnStageChanged">
+        @for (int option = 1; option <= 10; option++)
         {
-            <option value="@stage">@Loc.Format("stepN", StepNumberFor(stage))</option>
+            <option value="@option">@Loc.Format("stepN", option)</option>
         }
     </select>
 </label>
 
-<div class="lab-stage">
-    <canvas @ref="canvas" class="lab-canvas frenzy"></canvas>
-    <div class="lab-status">@StatusText</div>
-</div>
-
-@* The lit lines, right under the game, so you see them while you play. *@
-<pre class="code lab-live"><code>@foreach (CodeLine line in CodeLines().Where(line => IsLit(line.Key)).DefaultIfEmpty(new CodeLine(null, "// ...")))
-{<span class="code-line @(line.Key != null ? "hl" : "")">@line.Text</span>}</code></pre>
-
-<div class="lab-controls">
-    <button @ref="leftButton" class="lab-key" aria-label="A" disabled="@(!sim.HasPlayerInput)">◀ A</button>
-    <button @ref="rightButton" class="lab-key" aria-label="D" disabled="@(!sim.HasPlayerInput)">D ▶</button>
-</div>
-<button class="big-button" @onclick="Retry">@(sim.Stage is 4 or 5 ? Loc["dropAgain"] : Loc["retry"])</button>
-
-@if (sim.HasPlayerInput)
-{
-    <section class="card">
-        <h2>@Loc["tuning"]</h2>
-        <label class="lab-slider">
-            <span class="lab-slider-label"><code>moveSpeed</code> = <strong>@F(sim.Tuning.MoveSpeed)</strong></span>
-            <input type="range" min="5" max="40" step="1" value="@sim.Tuning.MoveSpeed.ToString(Inv)" @oninput="e => OnSlider(e, v => sim.Tuning.MoveSpeed = v, nameof(FallingFrenzyTuning.MoveSpeed))" />
-        </label>
-        @if (sim.HasSpawner)
-        {
-            <label class="lab-slider">
-                <span class="lab-slider-label"><code>spawnInterval</code> = <strong>@F(sim.Tuning.SpawnInterval)</strong></span>
-                <input type="range" min="0.2" max="3" step="0.1" value="@sim.Tuning.SpawnInterval.ToString(Inv)" @oninput="e => OnSlider(e, v => sim.Tuning.SpawnInterval = v, nameof(FallingFrenzyTuning.SpawnInterval))" />
-            </label>
-        }
-        @if (sim.HasRandomX)
-        {
-            <label class="lab-slider">
-                <span class="lab-slider-label"><code>spawnRangeX</code> = <strong>@F(sim.Tuning.SpawnRangeX)</strong></span>
-                <input type="range" min="0" max="18" step="0.5" value="@sim.Tuning.SpawnRangeX.ToString(Inv)" @oninput="e => OnSlider(e, v => sim.Tuning.SpawnRangeX = v, nameof(FallingFrenzyTuning.SpawnRangeX))" />
-            </label>
-        }
-        @if (sim.HasCounter)
-        {
-            <label class="lab-slider">
-                <span class="lab-slider-label"><code>startingSheepLeft</code> = <strong>@sim.Tuning.StartingSheepLeft</strong> <span class="muted">(@Loc["appliesOnRetry"])</span></span>
-                <input type="range" min="1" max="20" step="1" value="@sim.Tuning.StartingSheepLeft" @oninput="e => OnSlider(e, v => sim.Tuning.StartingSheepLeft = (int)v, nameof(FallingFrenzyTuning.StartingSheepLeft))" />
-            </label>
-        }
-        <label class="lab-toggle">
-            <input type="checkbox" checked="@sim.Tuning.UseForce" @onchange="e => sim.Tuning.UseForce = e.Value is true" />
-            @Loc["useForce"]
-        </label>
-    </section>
-}
-
-<section class="card">
-    <h2>@Loc["code"]</h2>
-    @if (sim.Stage < 4)
-    {
-        <p class="muted">@Loc["noCodeYet"]</p>
-    }
-    else
-    {
-        <pre class="code"><code>@foreach (CodeLine line in CodeLines())
-{<span class="code-line @(IsLit(line.Key) ? "hl" : "")">@line.Text</span>}</code></pre>
-    }
-</section>
+<FrenzyGame SceneLevel="@scene.SceneLevel" Features="@scene.Features" />
 
 @code {
-    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
-    private const double FlashSeconds = 0.4;
-
     [SupplyParameterFromQuery] public int? Stage { get; set; }
 
-    private FallingFrenzySim sim = new(10);
-    private ElementReference canvas;
-    private ElementReference leftButton;
-    private ElementReference rightButton;
-    private CancellationTokenSource? loopCancel;
-    private readonly Stopwatch clock = Stopwatch.StartNew();
+    // Course step N previews stage N (step 11 reuses stage 10).
+    private int stage = 10;
+    private (int SceneLevel, FrenzyFeature Features) scene = FallingFrenzySim.ForStage(10);
 
-    private bool leftHeld;
-    private bool rightHeld;
-    private readonly Dictionary<string, double> flashes = new();
-    private readonly List<float> newPuffs = new();
-    private string? touchedSlider;
-    private double touchedAt;
-
-    private record CodeLine(string? Key, string Text);
-
-    // Course step N previews stage N; step 3 has no preview and step 11 reuses stage 10.
-    private static int StepNumberFor(int stage) => stage;
-    private int StepNumberForStage => Math.Min(sim.Stage, 10);
-
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
-        sim = new FallingFrenzySim(Stage ?? 10);
-        HookEvents();
-    }
-
-    private void HookEvents()
-    {
-        sim.OnSpawned += (_, _) => Flash("spawn");
-        sim.OnHitPlayer += (_, _) => Flash("hit");
-        sim.OnCaught += (_, _) => { Flash("catch"); newPuffs.Add(sim.PlayerX); };
-        sim.OnLost += (_, _) => Flash("lost");
-        sim.OnGameOver += (_, _) => Flash("gameover");
-    }
-
-    private void Flash(string key) => flashes[key] = clock.Elapsed.TotalSeconds;
-
-    private bool Flashing(string key) =>
-        flashes.TryGetValue(key, out double at) && clock.Elapsed.TotalSeconds - at < FlashSeconds;
-
-    private IEnumerable<CodeLine> CodeLines()
-    {
-        int stage = sim.Stage;
-        if (stage is 4 or 5)
-        {
-            yield return new(null, "// FallingObject.cs");
-            yield return new("hit", "Debug.Log(\"Sheep hit \" + collision.gameObject.name);");
-        }
-        if (stage >= 5)
-        {
-            yield return new(null, "// PlayerController.cs");
-            yield return new(nameof(FallingFrenzyTuning.MoveSpeed), $"[SerializeField] private float moveSpeed = {F(sim.Tuning.MoveSpeed)}f;");
-            yield return new("a", "if (Keyboard.current.aKey.isPressed) { moveInput = -1f; }");
-            yield return new("d", "if (Keyboard.current.dKey.isPressed) { moveInput = 1f; }");
-            yield return new("move", sim.Tuning.UseForce
-                ? "playerRigidbody.AddForce(new Vector3(moveInput * moveSpeed, 0f, 0f));"
-                : "playerRigidbody.linearVelocity = new Vector3(moveInput * moveSpeed, 0f, 0f);");
-        }
-        if (stage >= 7)
-        {
-            yield return new("catch", "if (other.CompareTag(\"Sheep\")) { Destroy(other.gameObject); }");
-        }
-        if (stage >= 6)
-        {
-            yield return new(null, "// SheepSpawner.cs");
-            yield return new(nameof(FallingFrenzyTuning.SpawnInterval), $"[SerializeField] private float spawnInterval = {F(sim.Tuning.SpawnInterval)}f;");
-            if (stage >= 8)
-            {
-                yield return new(nameof(FallingFrenzyTuning.SpawnRangeX), $"spawnRangeX = {F(sim.Tuning.SpawnRangeX)}  // Inspector value");
-                yield return new("spawn", "float x = Random.Range(-spawnRangeX, spawnRangeX);");
-                yield return new("spawn", "Instantiate(sheepPrefab, position, sheepPrefab.transform.rotation);");
-            }
-            else
-            {
-                yield return new("spawn", "Instantiate(sheepPrefab, transform.position, sheepPrefab.transform.rotation);");
-            }
-        }
-        if (stage >= 7)
-        {
-            yield return new(null, "// SheepDestroyer.cs");
-            if (stage >= 9)
-            {
-                yield return new("lost", stage >= 10 ? "GameManager.Instance.LostSheep();" : "gameManager.LostSheep();");
-            }
-            yield return new("lost", "Destroy(other.gameObject);");
-        }
-        if (stage >= 9)
-        {
-            yield return new(null, "// GameManager.cs");
-            yield return new(nameof(FallingFrenzyTuning.StartingSheepLeft), $"[SerializeField] private int startingSheepLeft = {sim.Tuning.StartingSheepLeft};");
-            yield return new("lost", "sheepLeft--;");
-            yield return new("gameover", "Time.timeScale = 0f;");
-            if (stage >= 10)
-            {
-                yield return new("gameover", "OnGameOver?.Invoke(this, EventArgs.Empty);");
-            }
-        }
-    }
-
-    private bool IsLit(string? key)
-    {
-        if (key == null)
-        {
-            return false;
-        }
-        if (key == touchedSlider && clock.Elapsed.TotalSeconds - touchedAt < 1.5)
-        {
-            return true;
-        }
-
-        return key switch
-        {
-            "a" => leftHeld && sim.HasPlayerInput,
-            "d" => rightHeld && sim.HasPlayerInput,
-            "move" => MathF.Abs(sim.PlayerVelocityX) > 0.05f,
-            "gameover" => sim.IsGameOver,
-            _ => Flashing(key),
-        };
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-        {
-            return;
-        }
-
-        await JS.InvokeVoidAsync("sharpDulFrenzy.attach", leftButton, rightButton);
-        loopCancel = new CancellationTokenSource();
-        _ = RunLoopAsync(loopCancel.Token);
-    }
-
-    // Fixed timestep like Unity: as many 0.02 s FixedUpdates as real time has passed.
-    private async Task RunLoopAsync(CancellationToken cancel)
-    {
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
-        double simulated = clock.Elapsed.TotalSeconds;
-        int frame = 0;
-
-        while (await timer.WaitForNextTickAsync(cancel))
-        {
-            double now = clock.Elapsed.TotalSeconds;
-            // PlayerController.Update: the later D check wins.
-            float moveInput = rightHeld ? 1f : leftHeld ? -1f : 0f;
-            int steps = 0;
-            while (simulated + FallingFrenzySim.FixedDeltaTime <= now && steps < 5)
-            {
-                sim.FixedUpdate(moveInput);
-                simulated += FallingFrenzySim.FixedDeltaTime;
-                steps++;
-            }
-            if (steps == 5)
-            {
-                simulated = now;   // the tab was asleep - do not fast-forward
-            }
-
-            JsInput js = await JS.InvokeAsync<JsInput>("sharpDulFrenzy.frame", cancel, canvas, DrawState());
-            newPuffs.Clear();
-            leftHeld = js.Left;
-            rightHeld = js.Right;
-
-            if (++frame % 4 == 0)
-            {
-                StateHasChanged();
-            }
-        }
-    }
-
-    private object DrawState() => new
-    {
-        stage = sim.Stage,
-        viewHalfWidth = FallingFrenzySim.ViewHalfWidth,
-        viewBottom = FallingFrenzySim.ViewBottom,
-        playerX = sim.PlayerX,
-        playerY = FallingFrenzySim.PlayerY,
-        playerHalfWidth = FallingFrenzySim.PlayerHalfWidth,
-        playerHalfHeight = FallingFrenzySim.PlayerHalfHeight,
-        playerIsTrigger = sim.PlayerIsTrigger,
-        sheepRadius = FallingFrenzySim.SheepRadius,
-        sheeps = sim.Sheeps.Select(sheep => new { x = sheep.X, y = sheep.Y }),
-        hasSpawner = sim.HasSpawner,
-        hasRandomX = sim.HasRandomX,
-        spawnRangeX = sim.Tuning.SpawnRangeX,
-        spawnerY = FallingFrenzySim.SpawnerY,
-        hasCounter = sim.HasCounter,
-        sheepLeft = sim.SheepLeft,
-        gameOver = sim.IsGameOver,
-        newPuffs = newPuffs.ToArray(),
-    };
-
-    private class JsInput
-    {
-        public bool Left { get; set; }
-        public bool Right { get; set; }
+        stage = Math.Clamp(Stage ?? 10, 1, 10);
+        scene = FallingFrenzySim.ForStage(stage);
     }
 
     private void OnStageChanged(ChangeEventArgs e)
     {
-        if (int.TryParse(e.Value?.ToString(), out int stage))
+        if (int.TryParse(e.Value?.ToString(), out int selected))
         {
-            sim.SetStage(stage);
-            flashes.Clear();
-        }
-    }
-
-    private void OnSlider(ChangeEventArgs e, Action<float> set, string key)
-    {
-        if (float.TryParse(e.Value?.ToString(), NumberStyles.Float, Inv, out float value))
-        {
-            set(value);
-            touchedSlider = key;
-            touchedAt = clock.Elapsed.TotalSeconds;
-        }
-    }
-
-    private void Retry()
-    {
-        flashes.Clear();
-        sim.Reset();
-    }
-
-    private string StatusText => sim.Stage switch
-    {
-        1 => Loc["ffStage1"],
-        2 or 3 => Loc["ffStage2"],
-        _ when sim.IsGameOver => Loc.Format("ffGameOver", sim.Caught),
-        >= 7 => Loc.Format("ffCaught", sim.Caught),
-        _ => Loc[sim.HasPlayerInput ? "ffMove" : "ffWatch"],
-    };
-
-    private static string F(float value) => value.ToString("0.##", Inv);
-
-    public async ValueTask DisposeAsync()
-    {
-        loopCancel?.Cancel();
-        try
-        {
-            await JS.InvokeVoidAsync("sharpDulFrenzy.detach");
-        }
-        catch (JSDisconnectedException)
-        {
+            stage = Math.Clamp(selected, 1, 10);
+            scene = FallingFrenzySim.ForStage(stage);
         }
     }
 }

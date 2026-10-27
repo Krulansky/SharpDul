@@ -10,8 +10,26 @@ public class FallingFrenzyTuning
     public bool UseForce;
 }
 
+/// <summary>The parts of the game that exist so far - one per script (or script change).</summary>
+[Flags]
+public enum FrenzyFeature
+{
+    None = 0,
+    CollisionLog = 1 << 0,    // FallingObject.OnCollisionEnter -> Debug.Log
+    ReadInput = 1 << 1,       // PlayerController.Update
+    Move = 1 << 2,            // PlayerController.FixedUpdate
+    Spawner = 1 << 3,         // SheepSpawner
+    Catch = 1 << 4,           // PlayerController.OnTriggerEnter (+ Is Trigger)
+    Destroyer = 1 << 5,       // SheepDestroyer
+    RandomX = 1 << 6,         // SheepSpawner random position
+    Counter = 1 << 7,         // GameManager (text + LostSheep)
+    CounterLinked = 1 << 8,   // SheepDestroyer calls LostSheep
+    Events = 1 << 9,          // GameManager singleton + events
+    EventsUI = 1 << 10,       // GameUI listens
+}
+
 /// <summary>
-/// The Falling Frenzy game as it behaves after a given course step (Stage 1-10), in plain C#.
+/// Falling Frenzy in plain C#, with only the parts that have been built switched on.
 /// Same numbers as the course scene: player box 3 x 0.5 at y -1, sheep radius 0.5 with
 /// Bounciness 1 (averaged to 0.5 against the player), spawner at y 20, destroyer at y -10,
 /// Unity gravity. A close approximation of PhysX, not a bit-exact copy. No UI here.
@@ -28,6 +46,7 @@ public class FallingFrenzySim
     public const float SheepRadius = 0.5f;
     public const float SpawnerY = 20f;
     public const float DestroyerY = -10f;
+    public const float SingleSheepY = 15f;
 
     private const float Gravity = -9.81f;
     private const float Bounce = 0.5f;
@@ -41,17 +60,19 @@ public class FallingFrenzySim
         public float Y;
         public float VelocityY;
         public bool Resting;
-        public bool HasHitPlayer;
     }
 
     public event EventHandler? OnSpawned;
     public event EventHandler? OnHitPlayer;
     public event EventHandler? OnCaught;
     public event EventHandler? OnLost;
+    public event EventHandler? OnSheepLeftChanged;
     public event EventHandler? OnGameOver;
 
     public FallingFrenzyTuning Tuning { get; } = new();
-    public int Stage { get; private set; }
+    public FrenzyFeature Features { get; private set; }
+    /// <summary>1 = empty scene, 2 = player placed, 4 = player + a falling sheep (Rigidbody, no code).</summary>
+    public int SceneLevel { get; private set; }
     public float PlayerX { get; private set; }
     public float PlayerVelocityX { get; private set; }
     public List<Sheep> Sheeps { get; } = new();
@@ -62,22 +83,39 @@ public class FallingFrenzySim
     private float timer;
     private readonly Random random = new();
 
-    public bool HasPlayerInput => Stage >= 5;
-    public bool HasSpawner => Stage >= 6;
-    public bool PlayerIsTrigger => Stage >= 7;
-    public bool HasDestroyer => Stage >= 7;
-    public bool HasRandomX => Stage >= 8;
-    public bool HasCounter => Stage >= 9;
+    public bool Has(FrenzyFeature feature) => (Features & feature) == feature;
+    public bool ShowPlayer => SceneLevel >= 2;
+    public bool HasPhysics => SceneLevel >= 4;
 
-    public FallingFrenzySim(int stage)
+    /// <summary>The course steps as feature sets: the game after step N.</summary>
+    public static (int SceneLevel, FrenzyFeature Features) ForStage(int stage)
     {
-        SetStage(stage);
+        FrenzyFeature features = FrenzyFeature.None;
+        if (stage >= 4) features |= FrenzyFeature.CollisionLog;
+        if (stage >= 5) features |= FrenzyFeature.ReadInput | FrenzyFeature.Move;
+        if (stage >= 6) features |= FrenzyFeature.Spawner;
+        if (stage >= 7) features |= FrenzyFeature.Catch | FrenzyFeature.Destroyer;
+        if (stage >= 8) features |= FrenzyFeature.RandomX;
+        if (stage >= 9) features |= FrenzyFeature.Counter | FrenzyFeature.CounterLinked;
+        if (stage >= 10) features |= FrenzyFeature.Events | FrenzyFeature.EventsUI;
+        int sceneLevel = stage >= 4 ? 4 : stage >= 2 ? 2 : 1;
+        return (sceneLevel, features);
     }
 
-    public void SetStage(int stage)
+    public FallingFrenzySim(int sceneLevel, FrenzyFeature features)
     {
-        Stage = Math.Clamp(stage, 1, 10);
-        Reset();
+        Configure(sceneLevel, features);
+    }
+
+    public void Configure(int sceneLevel, FrenzyFeature features)
+    {
+        bool changed = sceneLevel != SceneLevel || features != Features;
+        SceneLevel = sceneLevel;
+        Features = features;
+        if (changed)
+        {
+            Reset();
+        }
     }
 
     public void Reset()
@@ -90,40 +128,40 @@ public class FallingFrenzySim
         IsGameOver = false;
         timer = 0f;
 
-        if (Stage is 4 or 5)
+        if (HasPhysics && !Has(FrenzyFeature.Spawner))
         {
             DropSingleSheep();
         }
     }
 
-    /// <summary>Steps 4-5: one sheep placed in the scene at (0, 15).</summary>
+    /// <summary>Before the spawner exists: one sheep placed in the scene at (0, 15).</summary>
     public void DropSingleSheep()
     {
         Sheeps.Clear();
-        Sheeps.Add(new Sheep { X = 0f, Y = 15f });
+        Sheeps.Add(new Sheep { X = 0f, Y = SingleSheepY });
     }
 
     /// <param name="moveInput">-1, 0 or 1, as PlayerController.moveInput.</param>
     public void FixedUpdate(float moveInput)
     {
         // Time.timeScale = 0: physics and timers stop.
-        if (IsGameOver || Stage < 4)
+        if (IsGameOver || !HasPhysics)
         {
             return;
         }
 
-        if (HasPlayerInput)
+        if (Has(FrenzyFeature.Move))
         {
-            MovePlayer(moveInput);
+            MovePlayer(Has(FrenzyFeature.ReadInput) ? moveInput : 0f);
         }
 
-        if (HasSpawner)
+        if (Has(FrenzyFeature.Spawner))
         {
             // SheepSpawner.Update
             timer += FixedDeltaTime;
             if (timer > Tuning.SpawnInterval)
             {
-                float x = HasRandomX ? (float)(random.NextDouble() * 2 - 1) * Tuning.SpawnRangeX : 0f;
+                float x = Has(FrenzyFeature.RandomX) ? (float)(random.NextDouble() * 2 - 1) * Tuning.SpawnRangeX : 0f;
                 Sheeps.Add(new Sheep { X = x, Y = SpawnerY });
                 timer = 0f;
                 OnSpawned?.Invoke(this, EventArgs.Empty);
@@ -171,8 +209,9 @@ public class FallingFrenzySim
         remove = false;
         float playerTop = PlayerY + PlayerHalfHeight;
         bool overPlayer = MathF.Abs(sheep.X - PlayerX) <= PlayerHalfWidth;
+        bool playerIsTrigger = Has(FrenzyFeature.Catch);
 
-        if (sheep.Resting && !overPlayer)
+        if (sheep.Resting && (!overPlayer || playerIsTrigger))
         {
             sheep.Resting = false;   // the player slid away - it falls again
         }
@@ -184,7 +223,7 @@ public class FallingFrenzySim
             sheep.Y += FixedDeltaTime * sheep.VelocityY;
             float bottom = sheep.Y - SheepRadius;
 
-            if (PlayerIsTrigger)
+            if (playerIsTrigger)
             {
                 // PlayerController.OnTriggerEnter: overlap with the catcher box.
                 bool overlapsY = bottom <= playerTop && sheep.Y + SheepRadius >= PlayerY - PlayerHalfHeight;
@@ -198,13 +237,9 @@ public class FallingFrenzySim
             }
             else if (overPlayer && previousBottom >= playerTop && bottom < playerTop && sheep.VelocityY < 0f)
             {
-                // Solid collision: bounce (Bounciness 1 and 0, Average = 0.5).
+                // Solid collision: bounce (Bounciness 1 and 0, Average = 0.5). Every bounce is a new OnCollisionEnter.
                 sheep.Y = playerTop + SheepRadius;
-                if (!sheep.HasHitPlayer)
-                {
-                    sheep.HasHitPlayer = true;
-                    OnHitPlayer?.Invoke(this, EventArgs.Empty);
-                }
+                OnHitPlayer?.Invoke(this, EventArgs.Empty);
                 sheep.VelocityY = -sheep.VelocityY * Bounce;
                 if (sheep.VelocityY < 1f)
                 {
@@ -214,12 +249,12 @@ public class FallingFrenzySim
             }
         }
 
-        if (HasDestroyer && sheep.Y <= DestroyerY)
+        if (Has(FrenzyFeature.Destroyer) && sheep.Y <= DestroyerY)
         {
             // SheepDestroyer.OnTriggerEnter
             remove = true;
             OnLost?.Invoke(this, EventArgs.Empty);
-            if (HasCounter)
+            if (Has(FrenzyFeature.Counter | FrenzyFeature.CounterLinked))
             {
                 LostSheep();
             }
@@ -228,7 +263,7 @@ public class FallingFrenzySim
 
         if (sheep.Y < CleanupY)
         {
-            remove = true;   // Lab-only cleanup; in Unity, before step 7 it would fall for ever.
+            remove = true;   // Lab-only cleanup; in Unity, without a destroyer it would fall for ever.
         }
     }
 
@@ -241,6 +276,7 @@ public class FallingFrenzySim
         }
 
         SheepLeft--;
+        OnSheepLeftChanged?.Invoke(this, EventArgs.Empty);
         if (SheepLeft <= 0)
         {
             IsGameOver = true;

@@ -1,0 +1,72 @@
+{
+  "title": "Falling Frenzy",
+  "description": "Rozlúskni skripty jeden za druhým - každý vyriešený skript zapne svoju časť hry.",
+  "puzzles": {
+    "falling-object": {
+      "title": "FallingObject: ohlás zásah",
+      "context": "Ovca už padá a odráža sa - to spraví Rigidbody bez akéhokoľvek kódu. Tento skript sedí na Sheep a pri náraze do niečoho pevného zapíše do Console.",
+      "hint": "Pevné veci, ktoré do seba narazia, volajú OnCollisionEnter. OnTriggerEnter je pre triggery - hráč zatiaľ nie je trigger. Meno toho, do čoho si narazil, je na jeho gameObject.",
+      "success": "Každý odraz teraz zapíše \"Sheep hit Player\" do Console pod hrou."
+    },
+    "player-input": {
+      "title": "PlayerController: čítaj klávesy",
+      "context": "Tento skript sedí na Playerovi. Prvá polovica: každý frame premeň klávesy A a D na jedno číslo, moveInput (-1 doľava, 0 nič, 1 doprava).",
+      "hint": "Najprv vynuluj moveInput, potom nech A nastaví -1 a D 1. Ktorá Unity metóda beží každý frame?",
+      "success": "Klávesy sa čítajú - pozri, ako sa kód rozsvieti, keď držíš A alebo D. Hráč sa ale ešte nepohne: nikto moveInput nepoužíva."
+    },
+    "player-move": {
+      "title": "PlayerController: hýb sa vo fyzikálnom kroku",
+      "context": "Druhá polovica toho istého skriptu: v každom fyzikálnom kroku premeň moveInput na rýchlosť pre Rigidbody.",
+      "hint": "Rýchlosť = smer x ako rýchlo. Daj ju Rigidbody - priame posúvanie transformu by bojovalo s fyzikou.",
+      "success": "Hráč sa hýbe! Arkádový pocit: rozbehne sa aj zastaví okamžite, lebo linearVelocity nahradí starý pohyb."
+    },
+    "sheep-spawner": {
+      "title": "SheepSpawner: ovca každú sekundu",
+      "context": "Prázdny GameObject hore nad obrazovkou. Počíta čas, a keď uplynie spawnInterval, vytvorí novú kópiu prefabu Sheep.",
+      "hint": "Pripočítaj k timeru čas framu. Keď je väčší ako spawnInterval: Instantiate, potom timer vynuluj.",
+      "success": "Nekonečné ovce zo stredu hore. Hráč je stále pevný, takže sa od neho odrážajú."
+    },
+    "player-catch": {
+      "title": "PlayerController: chytaj!",
+      "context": "Box Collider Playera dostane zaškrtnuté Is Trigger, takže ovce do neho vojdú namiesto odrazu. Táto metóda beží, keď niečo vojde do triggera.",
+      "hint": "Trigger collidery volajú OnTriggerEnter. Skontroluj tag a znič to, čo vošlo - pozor: samotné gameObject je hráč sám.",
+      "success": "Chytené ovce zmiznú so zeleným obláčikom. Minuté padajú z obrazovky... zatiaľ navždy."
+    },
+    "sheep-destroyer": {
+      "title": "SheepDestroyer: uprac minuté ovce",
+      "context": "Obrovský neviditeľný trigger hlboko pod obrazovkou (y -10, 100 x 100). Každá ovca, ktorá minie hráča, skončí tu.",
+      "hint": "Rovnaký vzor ako chytanie: skontroluj tag, znič druhý objekt. Destroy potrebuje celý GameObject, nie jeden z jeho komponentov.",
+      "success": "Minuté ovce sa zničia pod obrazovkou, takže sa už nehromadia v pamäti."
+    },
+    "random-x": {
+      "title": "SheepSpawner: náhodné pozície",
+      "context": "Zmeň spawner: vyber náhodné X medzi -spawnRangeX a spawnRangeX, Y a Z nechaj zo spawnera.",
+      "hint": "Random.Range(min, max). Poskladaj pozíciu z x a z y a z spawnera a spawnuj tam namiesto transform.position.",
+      "success": "Ovce prší z celej šírky. Skús slider spawnRangeX - pri 0 sú zase všetky v strede."
+    },
+    "game-manager": {
+      "title": "GameManager: počítaj ovce",
+      "context": "Prázdny objekt Game Manager. Drží počet zostávajúcich oviec, ukazuje ho v UI texte a pri 0 ukončí hru.",
+      "hint": "Start: skopíruj štartovaciu hodnotu a ukáž ju. LostSheep: o jednu menej, ukáž to, a ak už žiadne nie sú - ukáž GAME OVER a zastav čas.",
+      "success": "\"Sheep Left: 5\" je na obrazovke. Ale nikdy neubúda: LostSheep() zatiaľ nikto nevolá."
+    },
+    "destroyer-lost-sheep": {
+      "title": "SheepDestroyer: povedz to GameManagerovi",
+      "context": "Prepoj ich: destroyer dostane referenciu na GameManager (priradenú v Inspectore) a ohlási každú minutú ovcu.",
+      "hint": "[SerializeField] pole pre GameManager, potom zavolaj jeho public metódu - private UpdateText sa zvonku zavolať nedá.",
+      "success": "Počítadlo odpočítava a pri 0 hra zamrzne: Time.timeScale = 0. Postavil si celú hru!"
+    },
+    "level-up-events": {
+      "title": "Level up: GameManager ako singleton s eventmi",
+      "context": "Naša architektúra (LuaLander, FerryHeist): GameManager sa uloží do static Instance a zmeny len oznamuje cez event. Na UI už nesiaha.",
+      "hint": "Static property drží jediný GameManager; v Awake sa doň uloží. Po odpočítaní vystreľ event - ?. aby to bolo bezpečné aj bez listenerov.",
+      "success": "Na obrazovke tá istá hra - ale logika teraz len strieľa eventy. SheepDestroyer sa k nej dostane cez GameManager.Instance, bez poľa v Inspectore."
+    },
+    "game-ui": {
+      "title": "GameUI: počúvaj a kresli",
+      "context": "Nový skript na Canvase. Prihlási sa na OnSheepLeftChanged a aktualizuje text vždy, keď GameManager oznámi zmenu.",
+      "hint": "Prihlás sa cez += v metóde, ktorá beží po všetkých Awake. Keď event vystrelí, aktualizuj text.",
+      "success": "Logika a UI sú oddelené, presne ako vo všetkých našich hrách. Falling Frenzy je hotový - teraz ho postav naozaj v Unity s kurzom!"
+    }
+  }
+}

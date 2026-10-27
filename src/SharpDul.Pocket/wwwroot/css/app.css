@@ -350,3 +350,61 @@ a { color: inherit; }
 .lab-stage-select select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
 .lab-toggle { display: flex; gap: 8px; align-items: flex-start; font-size: 0.9rem; line-height: 1.35; }
 .lab-key:disabled { opacity: 0.4; }
+
+/* Build Lab */
+.script-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.script-chip {
+    font: inherit;
+    font-size: 0.75rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+.script-chip.solved { color: var(--right); border-color: var(--right); }
+.script-chip.current { color: var(--accent-text); background: var(--accent); border-color: var(--accent); }
+.script-chip:disabled { cursor: default; opacity: 0.6; }
+.puzzle .code-file { margin-bottom: 6px; }
+.puzzle-code .slot-empty { color: #71717a; background: rgba(255, 255, 255, 0.06); box-shadow: inset 3px 0 0 #52525b; }
+.puzzle-code .slot-filled { background: var(--code-hl); box-shadow: inset 3px 0 0 var(--code-hl-edge); cursor: pointer; }
+.puzzle-code .slot-filled.wrong { background: rgba(220, 38, 38, 0.3); box-shadow: inset 3px 0 0 var(--wrong); }
+.puzzle-code .blank {
+    font: inherit;
+    color: #fde68a;
+    background: #3f3f46;
+    border: 1px dashed #fde68a;
+    border-radius: 4px;
+    padding: 0 2px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.puzzle-code .blank.wrong { border: 1px solid var(--wrong); color: #fca5a5; }
+.puzzle-code .blank-solved { color: #86efac; }
+.pool { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.pool-chip {
+    text-align: left;
+    font: inherit;
+    font-size: 0.78rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+.pool-chip code { white-space: pre-wrap; }
+.puzzle-problem { color: var(--wrong); font-weight: 600; }
+.console {
+    background: #0b0b10;
+    color: #d4d4d8;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    margin: 0 0 12px;
+    min-height: calc(5 * 1.4em + 16px);
+}
+.console-line { display: block; }

@@ -21,6 +21,8 @@ public class ProgressData
     public Dictionary<string, CardProgress> Cards { get; set; } = new();
     /// <summary>Course steps marked as built, as "&lt;courseId&gt;/&lt;stepId&gt;".</summary>
     public HashSet<string> CompletedSteps { get; set; } = new();
-    /// <summary>Steps that already paid out XP, so ticking a step on and off cannot farm XP.</summary>
+    /// <summary>Build Lab script puzzles solved, as "&lt;buildId&gt;/&lt;puzzleId&gt;".</summary>
+    public HashSet<string> SolvedPuzzles { get; set; } = new();
+    /// <summary>Steps (and "puzzle:" keys) that already paid out XP, so ticking a step on and off cannot farm XP.</summary>
     public HashSet<string> StepsEverRewarded { get; set; } = new();
 }

@@ -79,6 +79,33 @@ public class ProgressStore
         return xp;
     }
 
+    /// <summary>Marks a Build Lab puzzle as solved. XP only the first time ever.</summary>
+    public async Task<int> SolvePuzzleAsync(string buildId, string puzzleId)
+    {
+        ProgressData data = await GetAsync();
+        string key = $"{buildId}/{puzzleId}";
+        data.SolvedPuzzles.Add(key);
+        data.ActiveDays.Add(Today);
+
+        int xp = 0;
+        if (data.StepsEverRewarded.Add("puzzle:" + key))
+        {
+            xp = Progression.XpForPuzzle;
+            data.Xp += xp;
+        }
+
+        await SaveAsync();
+        return xp;
+    }
+
+    /// <summary>Starts a build over: the puzzles lock again (XP already earned stays).</summary>
+    public async Task ResetBuildAsync(string buildId)
+    {
+        ProgressData data = await GetAsync();
+        data.SolvedPuzzles.RemoveWhere(key => key.StartsWith(buildId + "/"));
+        await SaveAsync();
+    }
+
     public async Task SetLanguageAsync(string languageCode)
     {
         ProgressData data = await GetAsync();

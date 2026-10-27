@@ -40,6 +40,14 @@ Session handoff between machines and sessions. Keep it short and current.
   `wwwroot/js/fallingfrenzy.js`): the game as it behaves after any course step (stage 1-10,
   `?stage=N`), A/D or hold-buttons, sliders for moveSpeed, spawnInterval, spawnRangeX,
   startingSheepLeft, and a velocity-vs-AddForce toggle; lit code lines.
+- **Build Lab** (`Pages/BuildLab.razor`, `Logic/PuzzleBoard.cs`, `Services/BuildLibrary.cs`,
+  content in `wwwroot/content/builds/`): the director assembles the game inside the app.
+  Each script is a puzzle - tap shuffled lines into order, pick the right word in each
+  `____`, avoid distractor lines; checked against the solution (plus listed alternative
+  orders). A solved puzzle switches its `FrenzyFeature` on in the shared `Components/FrenzyGame.razor`
+  (+20 XP once, `SolvedPuzzles`). Falling Frenzy: 11 puzzles, same code as the Unity course.
+  Sources: `tools/build_falling_frenzy_puzzles.py`, `tools/falling_frenzy_puzzles_translations.py`.
+  Verified: all 11 solved through the UI in headless Chromium, each unlocking its part.
 - Look: neutral grey placeholders. The director designs the visual identity.
 
 Verified in headless Chromium at iPhone 13 size, served under `/SharpDul/` like GitHub Pages:
@@ -77,5 +85,5 @@ knowledge/   study notes per source project (e.g. falling-frenzy.md) - raw mater
 1. Director tries the Mechanics Lab and the language switch on the iPhone.
 2. More LuaLander questions, then Medium level (`?.Invoke`, dot product, SetActive vs events).
 3. Particle Lab (sandbox + "recreate this effect").
-4. Director builds Falling Frenzy in Unity with the course (own repo, e.g. FallingFrenzy).
+4. Director cracks the Falling Frenzy Build Lab on the iPhone, then builds it in Unity with the course (own repo, e.g. FallingFrenzy).
    Quiz pack from it only for steps actually built.

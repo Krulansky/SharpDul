@@ -1,0 +1,291 @@
+@page "/build/{BuildId}"
+@using SharpDul.Pocket.Components
+@using SharpDul.Pocket.Localization
+@using SharpDul.Pocket.Logic
+@using SharpDul.Pocket.Models
+@using SharpDul.Pocket.Services
+@inject BuildLibrary Builds
+@inject ProgressStore Progress
+@inject Localizer Loc
+
+<PageTitle>SharpDul · Build Lab</PageTitle>
+
+<nav class="top-bar">
+    <a href="">@Loc["home"]</a>
+    <span class="muted">Build Lab</span>
+</nav>
+
+@if (build == null || progress == null)
+{
+    <p class="muted">@Loc["loading"]</p>
+}
+else
+{
+    <h1>@build.Title</h1>
+    <p class="muted">@build.Description</p>
+
+    <FrenzyGame SceneLevel="4" Features="@features" ShowCodeCard="false" />
+
+    <section class="card">
+        <div class="row">
+            <strong>@Loc.Format("scriptsCracked", SolvedCount, build.Puzzles.Count)</strong>
+            @if (SolvedCount > 0)
+            {
+                <button class="hint-button" @onclick="StartOverAsync">@(confirmStartOver ? Loc["startOverConfirm"] : Loc["startOver"])</button>
+            }
+        </div>
+        <div class="bar"><div class="bar-fill" style="width:@(SolvedCount * 100 / build.Puzzles.Count)%"></div></div>
+        <div class="script-list">
+            @for (int i = 0; i < build.Puzzles.Count; i++)
+            {
+                ScriptPuzzle puzzle = build.Puzzles[i];
+                bool solved = IsSolved(puzzle);
+                bool current = puzzle == CurrentPuzzle;
+                int index = i;
+                <button class="script-chip @(solved ? "solved" : "") @(current ? "current" : "")"
+                        disabled="@(!solved && !current)" @onclick="() => View(index)">
+                    @(solved ? "✓" : current ? "▶" : "🔒") @puzzle.File
+                </button>
+            }
+        </div>
+    </section>
+
+    @if (board != null && shownPuzzle != null)
+    {
+        bool readOnly = IsSolved(shownPuzzle);
+        <section class="card puzzle">
+            <h2>@shownPuzzle.Title</h2>
+            <p class="context">@shownPuzzle.Context</p>
+
+            <div class="code-file">@shownPuzzle.File</div>
+            <pre class="code puzzle-code"><code>@{ int slot = 0; }@foreach (PuzzleBoard.Line? line in board.Template)
+{
+    if (line != null)
+    {<span class="code-line">@RenderLine(line, readOnly)</span>}
+    else
+    {
+        int slotIndex = slot++;
+        PuzzleBoard.Chip? chip = slotIndex < board.Placed.Count ? board.Placed[slotIndex] : null;
+        if (chip == null)
+        {<span class="code-line slot-empty">@(new string(' ', 4))…</span>}
+        else
+        {<span class="code-line slot-filled @(board.WrongSlot == slotIndex ? "wrong" : "")" @onclick="() => Unplace(chip, readOnly)">@RenderLine(chip.Line, readOnly)</span>}
+    }
+}</code></pre>
+
+            @if (!readOnly)
+            {
+                <p class="muted source">@Loc["tapToPlace"]</p>
+                <div class="pool">
+                    @foreach (PuzzleBoard.Chip chip in board.Pool)
+                    {
+                        <button class="pool-chip" @onclick="() => Place(chip)"><code>@ChipText(chip)</code></button>
+                    }
+                </div>
+
+                @if (showHint)
+                {
+                    <p class="hint">💡 @shownPuzzle.Hint</p>
+                }
+                else
+                {
+                    <button class="hint-button" @onclick="() => showHint = true">@Loc["showHint"]</button>
+                }
+
+                @if (board.LastProblem != PuzzleBoard.Problem.None)
+                {
+                    <p class="puzzle-problem">@ProblemText</p>
+                }
+
+                <button class="big-button primary" @onclick="CheckAsync">@Loc["checkScript"]</button>
+            }
+            else
+            {
+                <section class="feedback right">
+                    <strong>@(justSolved ? Loc["cracked"] : Loc["solvedEarlier"])</strong>
+                    <p>@shownPuzzle.Success</p>
+                    @if (xpGained > 0)
+                    {
+                        <p class="muted">+@xpGained XP</p>
+                    }
+                </section>
+                @if (CurrentPuzzle != null && CurrentPuzzle != shownPuzzle)
+                {
+                    <button class="big-button primary" @onclick="ShowCurrent">@Loc["nextScript"] →</button>
+                }
+            }
+        </section>
+    }
+
+    @if (CurrentPuzzle == null)
+    {
+        <section class="card feedback right">
+            <strong>@Loc["buildDone"]</strong>
+            <p>@Loc["buildDoneText"]</p>
+        </section>
+        @if (build.CourseId != null)
+        {
+            <a class="big-button primary" href="course/@build.CourseId">@Loc["toCourse"]</a>
+        }
+    }
+}
+
+@code {
+    [Parameter] public string BuildId { get; set; } = "";
+    [CascadingParameter] public Language Language { get; set; }
+
+    private BuildProject? build;
+    private ProgressData? progress;
+    private FrenzyFeature features;
+    private ScriptPuzzle? shownPuzzle;
+    private PuzzleBoard? board;
+    private bool showHint;
+    private bool justSolved;
+    private int xpGained;
+    private bool confirmStartOver;
+
+    private int SolvedCount => build?.Puzzles.Count(IsSolved) ?? 0;
+    private ScriptPuzzle? CurrentPuzzle => build?.Puzzles.FirstOrDefault(puzzle => !IsSolved(puzzle));
+
+    private bool IsSolved(ScriptPuzzle puzzle) => progress != null && progress.SolvedPuzzles.Contains($"{build!.Id}/{puzzle.Id}");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        build = await Builds.GetBuildAsync(BuildId);
+        progress = await Progress.GetAsync();
+        UpdateFeatures();
+        ShowCurrent();
+    }
+
+    private void UpdateFeatures()
+    {
+        features = FrenzyFeature.None;
+        if (build == null)
+        {
+            return;
+        }
+        foreach (ScriptPuzzle puzzle in build.Puzzles.Where(IsSolved))
+        {
+            foreach (string unlock in puzzle.Unlocks)
+            {
+                if (Enum.TryParse(unlock, out FrenzyFeature feature))
+                {
+                    features |= feature;
+                }
+            }
+        }
+    }
+
+    private void ShowCurrent()
+    {
+        Show(CurrentPuzzle);
+    }
+
+    private void View(int index)
+    {
+        Show(build!.Puzzles[index]);
+    }
+
+    private void Show(ScriptPuzzle? puzzle)
+    {
+        shownPuzzle = puzzle;
+        justSolved = false;
+        showHint = false;
+        xpGained = 0;
+        confirmStartOver = false;
+        board = puzzle == null ? null
+            : IsSolved(puzzle) ? PuzzleBoard.Solved(puzzle)
+            : new PuzzleBoard(puzzle, Random.Shared);
+    }
+
+    private void Place(PuzzleBoard.Chip chip) => board?.Place(chip);
+
+    private void Unplace(PuzzleBoard.Chip chip, bool readOnly)
+    {
+        if (!readOnly)
+        {
+            board?.Unplace(chip);
+        }
+    }
+
+    private async Task CheckAsync()
+    {
+        if (board == null || shownPuzzle == null || !board.Check())
+        {
+            return;
+        }
+
+        xpGained = await Progress.SolvePuzzleAsync(build!.Id, shownPuzzle.Id);
+        justSolved = true;
+        UpdateFeatures();
+    }
+
+    private async Task StartOverAsync()
+    {
+        if (!confirmStartOver)
+        {
+            confirmStartOver = true;
+            return;
+        }
+        await Progress.ResetBuildAsync(build!.Id);
+        UpdateFeatures();
+        ShowCurrent();
+    }
+
+    private string ProblemText => board!.LastProblem switch
+    {
+        PuzzleBoard.Problem.NotAllPlaced => Loc["problemNotAll"],
+        PuzzleBoard.Problem.DistractorUsed => Loc["problemDistractor"],
+        PuzzleBoard.Problem.WrongOrder => Loc.Format("problemOrder", board.WrongSlot!.Value + 1),
+        PuzzleBoard.Problem.WrongBlank => Loc["problemBlank"],
+        _ => "",
+    };
+
+    private static string ChipText(PuzzleBoard.Chip chip) =>
+        string.Concat(chip.Line.Segments.Select(segment => segment.BlankIndex >= 0 ? "____" : segment.Text));
+
+    private RenderFragment RenderLine(PuzzleBoard.Line line, bool readOnly) => builder =>
+    {
+        int seq = 0;
+        builder.AddContent(seq++, new string(' ', line.Indent));
+        foreach (PuzzleBoard.Segment segment in line.Segments)
+        {
+            if (segment.BlankIndex < 0)
+            {
+                builder.AddContent(seq++, segment.Text);
+                continue;
+            }
+
+            PuzzleBoard.Blank blank = board!.Blanks[segment.BlankIndex];
+            int blankIndex = segment.BlankIndex;
+            if (readOnly)
+            {
+                builder.OpenElement(seq++, "span");
+                builder.AddAttribute(seq++, "class", "blank-solved");
+                builder.AddContent(seq++, blank.Options[blank.CorrectOption]);
+                builder.CloseElement();
+                continue;
+            }
+
+            builder.OpenElement(seq++, "select");
+            builder.AddAttribute(seq++, "class", board.WrongBlankIndex == blankIndex ? "blank wrong" : "blank");
+            builder.AddAttribute(seq++, "value", blank.Chosen?.ToString() ?? "");
+            builder.AddAttribute(seq++, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this,
+                e => { if (int.TryParse(e.Value?.ToString(), out int option)) { board.Choose(blankIndex, option); } }));
+            // Choosing an option must not also tap the line back into the pool.
+            builder.AddEventStopPropagationAttribute(seq++, "onclick", true);
+            builder.OpenElement(seq++, "option");
+            builder.AddAttribute(seq++, "value", "");
+            builder.AddContent(seq++, "____");
+            builder.CloseElement();
+            for (int option = 0; option < blank.Options.Count; option++)
+            {
+                builder.OpenElement(seq++, "option");
+                builder.AddAttribute(seq++, "value", option.ToString());
+                builder.AddContent(seq++, blank.Options[option]);
+                builder.CloseElement();
+            }
+            builder.CloseElement();
+        }
+    };
+}

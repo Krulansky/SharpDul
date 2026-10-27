@@ -30,6 +30,11 @@ else
         <p class="muted source">@course.Source</p>
     </section>
 
+    <a class="big-button primary" href="build/@course.Id">
+        <span>@Loc["buildLab"] · @course.Title</span>
+        <small>@Loc["buildLabDesc"]</small>
+    </a>
+
     @for (int i = 0; i < course.Steps.Count; i++)
     {
         CourseStep step = course.Steps[i];

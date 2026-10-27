@@ -47,6 +47,10 @@ The user writes casual Slovak mixed with English gamedev terms - answer in the s
   Play-mode check, and a Lab preview of the game after that step. Course code is our own
   rewrite, not a copy of the original course files. Course sources live in `tools/` (Python
   that writes the JSON) - edit those, not the JSON.
+- **Build Lab** puzzles let the director assemble the same game in the app, script by
+  script (director decision 2026-10-27: "puzzle + blanks", no typing). Each puzzle unlocks one
+  part of the Lab game; keep puzzle code identical to the course code. Validate every puzzle
+  by solving it in a test before pushing - an unsolvable puzzle is a broken lesson.
 - Easy level never uses fill-in, find-the-bug or write-the-function questions.
 - **The code must lead to the answer.** Every question has a plain-language `context` (where
   the code lives, when it runs in the game), a trimmed snippet in which the answer can be

@@ -7,6 +7,7 @@ public static class Progression
 {
     public const int ActiveDaysWindow = 7;
     public const int XpForCourseStep = 25;
+    public const int XpForPuzzle = 20;
     private const int XpForWrongAnswer = 2;
 
     public static int XpForAnswer(Difficulty difficulty, bool correct)
