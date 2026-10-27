@@ -326,3 +326,27 @@ a { color: inherit; }
 .lab-slider-label { display: block; font-size: 0.9rem; margin-bottom: 4px; overflow-wrap: anywhere; }
 .lab-slider input { width: 100%; accent-color: var(--accent); }
 .lab-live { margin-bottom: 12px; height: calc(4 * 1.4em + 24px); overflow: hidden; font-size: 0.72rem; }
+
+/* Courses */
+.goal { font-size: 1.05rem; line-height: 1.4; }
+.actions, .why { margin: 0; padding-left: 1.3em; line-height: 1.45; }
+.actions li, .why li { margin-bottom: 8px; }
+.code-file { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.95rem; margin: 0 0 8px; overflow-wrap: anywhere; }
+.copy-button { margin-top: 0; flex-shrink: 0; }
+.check { border-left: 6px solid var(--right); }
+.step-link span { display: flex; gap: 10px; align-items: baseline; }
+.step-number {
+    display: inline-flex;
+    justify-content: center;
+    min-width: 1.8em;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+.step-link.done .step-number { color: var(--right); }
+.step-nav { display: flex; gap: 12px; }
+.step-nav .big-button { text-align: center; }
+.lab-canvas.frenzy { aspect-ratio: 36 / 22; }
+.lab-stage-select { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.lab-stage-select select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.lab-toggle { display: flex; gap: 8px; align-items: flex-start; font-size: 0.9rem; line-height: 1.35; }
+.lab-key:disabled { opacity: 0.4; }

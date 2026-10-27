@@ -1,0 +1,438 @@
+{
+  "id": "falling-frenzy",
+  "title": "Falling Frenzy",
+  "description": "Build GameDevTV's Unity Fundamentals game from scratch in Unity 6000.3.14f1: physics, input, prefabs, triggers, UI - and then our own architecture.",
+  "source": "Based on GameDevTV, Unity Fundamentals - gitlab.com/GameDevTV/unity-fundamentals/course/falling-frenzy. Code rewritten in our house style.",
+  "labPath": "lab/falling-frenzy",
+  "steps": [
+    {
+      "id": "01-project",
+      "title": "Create the project and the stage",
+      "goal": "An empty Unity project with the camera looking at the play area.",
+      "actions": [
+        "Unity Hub > Projects > New project. Editor Version: 6000.3.14f1. Template: Universal 3D. Project name: FallingFrenzy. Click Create project.",
+        "Project window > Assets > Scenes: right-click SampleScene > Rename > FallingFrenzy. Confirm the reload if Unity asks.",
+        "Hierarchy > Main Camera. Inspector > Transform > Position: X 0, Y 9, Z -62. Rotation: 0, 0, 0.",
+        "Still on Main Camera: Inspector > Camera > Field of View: 20.",
+        "File > Save (Ctrl+S)."
+      ],
+      "code": [],
+      "why": [
+        "The game is 3D but plays on one flat plane (X = left/right, Y = up/down). The camera stands far back (Z -62) with a narrow Field of View (20) so the plane looks almost flat - like a 2D game, but with 3D models and light.",
+        "Use the same Unity version on every PC (6000.3.14f1) - a newer one can save files the older one cannot read (LuaLander's URP asset lesson)."
+      ],
+      "check": "Press Play: an empty grey-blue scene, no errors in Window > General > Console.",
+      "labStage": 1
+    },
+    {
+      "id": "02-player",
+      "title": "Place the player (the catcher)",
+      "goal": "A flat box near the bottom of the screen that will catch the sheep.",
+      "actions": [
+        "Hierarchy > + > 3D Object > Cube. Rename it Player (right-click > Rename). It is at the root of the Hierarchy.",
+        "Player > Inspector > Transform > Position: X 0, Y -1, Z 0. Scale: X 3, Y 0.5, Z 1.",
+        "File > Save."
+      ],
+      "code": [],
+      "why": [
+        "A Cube comes with a Mesh Filter + Mesh Renderer (what you see) and a Box Collider (what physics feels). They are separate components: you can see things that do not collide and collide with things you cannot see.",
+        "Scale changes the collider too, so the 3 x 0.5 box is also a 3 x 0.5 catching area."
+      ],
+      "check": "In the Game view the flat box sits near the bottom centre.",
+      "labStage": 2
+    },
+    {
+      "id": "03-first-script",
+      "title": "Your first C# script",
+      "goal": "A script that runs when the game starts and changes its own GameObject.",
+      "actions": [
+        "Project window > Assets: right-click > Create > Folder, name it Scripts.",
+        "Inside Assets > Scripts: right-click > Create > Scripting > MonoBehaviour Script, name it HelloWorld.",
+        "Double-click HelloWorld to open it. In Start() write: gameObject.name = \"I am game dev!\"; then save the file.",
+        "Drag HelloWorld from the Project window onto Player in the Hierarchy.",
+        "Press Play, look at the Hierarchy, press Play again to stop.",
+        "Clean up: Player > Inspector > Hello World (Script) > ⋮ > Remove Component. Then delete Assets > Scripts > HelloWorld (right-click > Delete)."
+      ],
+      "code": [
+        {
+          "file": "HelloWorld.cs",
+          "text": "using UnityEngine;\n\npublic class HelloWorld : MonoBehaviour\n{\n    private void Start()\n    {\n        gameObject.name = \"I am game dev!\";\n    }\n}",
+          "highlight": [
+            5,
+            6,
+            7,
+            8
+          ]
+        }
+      ],
+      "why": [
+        "A MonoBehaviour is a component, like Transform or Box Collider. Unity calls its Start() once, before the first frame, and Update() every frame.",
+        "gameObject is the object the script sits on. Changes made in Play mode are undone when you stop - that is why the name comes back."
+      ],
+      "check": "In Play mode Player is renamed to \"I am game dev!\"; after Stop it is Player again.",
+      "labStage": 0
+    },
+    {
+      "id": "04-physics",
+      "title": "Physics: a falling, bouncing sheep",
+      "goal": "A sheep (for now a sphere) falls, bounces on the player and reports the hit.",
+      "actions": [
+        "Hierarchy > + > 3D Object > Sphere. Rename it Sheep. Transform > Position: X 0, Y 15, Z 0.",
+        "Sheep > Inspector > Add Component > Rigidbody. In Rigidbody > Constraints tick Freeze Position Z.",
+        "Project window > Assets: right-click > Create > Folder Physics Materials. Inside it: right-click > Create > Physics Material, name it Bouncy. Inspector: Bounciness 1.",
+        "Drag Bouncy onto Sheep > Inspector > Sphere Collider > Material.",
+        "Assets > Scripts: right-click > Create > Scripting > MonoBehaviour Script FallingObject. Write the code below and drag it onto Sheep.",
+        "Press Play."
+      ],
+      "code": [
+        {
+          "file": "FallingObject.cs",
+          "text": "using UnityEngine;\n\npublic class FallingObject : MonoBehaviour\n{\n    private void OnCollisionEnter(Collision collision)\n    {\n        Debug.Log(\"Sheep hit \" + collision.gameObject.name);\n    }\n}",
+          "highlight": [
+            5,
+            6,
+            7,
+            8
+          ]
+        }
+      ],
+      "why": [
+        "A Rigidbody hands the object to the physics engine: gravity, velocity, collisions. Without it the sphere is just scenery.",
+        "Freeze Position Z keeps the sheep on our flat play plane, so it never rolls towards or away from the camera.",
+        "OnCollisionEnter runs when two solid colliders touch and at least one has a Rigidbody. The Collision parameter tells you what was hit.",
+        "Bounciness 1 on the sheep and 0 on the player average to 0.5 (Bounce Combine = Average), so each bounce is about half as high."
+      ],
+      "check": "The sphere drops, bounces on Player a few times and the Console prints \"Sheep hit Player\".",
+      "labStage": 4
+    },
+    {
+      "id": "05-input",
+      "title": "Move the player with A and D",
+      "goal": "The catcher slides left and right, stops instantly when you let go.",
+      "actions": [
+        "Assets > Scripts: create a MonoBehaviour Script PlayerController with the code below and drag it onto Player.",
+        "Player > Inspector > Add Component > Rigidbody. Untick Use Gravity. Constraints: tick Freeze Position Y and Z, and Freeze Rotation X, Y and Z.",
+        "Drag the Rigidbody component (its title bar) from Player's Inspector into PlayerController > Player Rigidbody. It must not stay None.",
+        "PlayerController > Move Speed: 20.",
+        "Press Play and hold A / D."
+      ],
+      "code": [
+        {
+          "file": "PlayerController.cs",
+          "text": "using UnityEngine;\nusing UnityEngine.InputSystem;\n\npublic class PlayerController : MonoBehaviour\n{\n    [SerializeField] private Rigidbody playerRigidbody;\n    [SerializeField] private float moveSpeed = 20f;\n\n    private float moveInput;\n\n    private void Update()\n    {\n        // Read the keys every frame.\n        moveInput = 0f;\n        if (Keyboard.current.aKey.isPressed)\n        {\n            moveInput = -1f;\n        }\n        if (Keyboard.current.dKey.isPressed)\n        {\n            moveInput = 1f;\n        }\n    }\n\n    private void FixedUpdate()\n    {\n        // Move on the physics step.\n        playerRigidbody.linearVelocity = new Vector3(moveInput * moveSpeed, 0f, 0f);\n    }\n}",
+          "highlight": [
+            6,
+            7,
+            9,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            25,
+            26,
+            27,
+            28,
+            29
+          ]
+        }
+      ],
+      "why": [
+        "Input is read in Update (every frame, so no key press is missed); the body moves in FixedUpdate (the physics step). The moveInput field carries the value between the two.",
+        "Setting linearVelocity throws away the old motion: instant start, instant stop - an arcade feel. LuaLander uses AddForce instead and gets momentum. Try both in the Lab preview below.",
+        "Holding A and D together moves right: the D check runs last and wins.",
+        "A new [SerializeField] shows up as None in the Inspector. Nothing warns you until Play mode throws a NullReferenceException - always assign it right away."
+      ],
+      "check": "A moves the box left, D right; letting go stops it at once. The sheep still bounces on it.",
+      "labStage": 5
+    },
+    {
+      "id": "06-spawner",
+      "title": "A prefab and a spawner: endless sheep",
+      "goal": "A new sheep drops from the top centre every second.",
+      "actions": [
+        "Sheep > Inspector > Falling Object (Script) > ⋮ > Remove Component (we no longer need the log).",
+        "Project window > Assets: create a folder Prefabs. Drag Sheep from the Hierarchy into Assets > Prefabs. It turns blue in the Hierarchy - it is now a prefab.",
+        "Delete the Sheep from the Hierarchy (right-click > Delete). The prefab in Assets > Prefabs stays.",
+        "Hierarchy > + > Create Empty. Rename it Sheep Spawner. Transform > Position: X 0, Y 20, Z 0.",
+        "Create the SheepSpawner script below and drag it onto Sheep Spawner. Drag Assets > Prefabs > Sheep into its Sheep Prefab field.",
+        "Press Play."
+      ],
+      "code": [
+        {
+          "file": "SheepSpawner.cs",
+          "text": "using UnityEngine;\n\npublic class SheepSpawner : MonoBehaviour\n{\n    [SerializeField] private GameObject sheepPrefab;\n    [SerializeField] private float spawnInterval = 1f;\n\n    private float timer;\n\n    private void Update()\n    {\n        timer += Time.deltaTime;\n        if (timer > spawnInterval)\n        {\n            Instantiate(sheepPrefab, transform.position, sheepPrefab.transform.rotation);\n            timer = 0f;\n        }\n    }\n}",
+          "highlight": [
+            5,
+            6,
+            8,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ]
+        }
+      ],
+      "why": [
+        "A prefab is a saved GameObject template. Instantiate makes a live copy of it in the scene - every sheep is a clone of the same prefab.",
+        "The timer counts real seconds (Time.deltaTime), fires when it passes spawnInterval and resets to 0. No coroutine needed.",
+        "Passing sheepPrefab.transform.rotation keeps each copy turned the way the prefab is."
+      ],
+      "check": "Every second a sphere appears at the top centre and falls. They bounce off the player and pile up or fall away.",
+      "labStage": 6
+    },
+    {
+      "id": "07-triggers",
+      "title": "Catch and lose: triggers and tags",
+      "goal": "Sheep that touch the catcher disappear; sheep that fall past it are destroyed below the screen.",
+      "actions": [
+        "Tag the prefab: double-click Assets > Prefabs > Sheep. Inspector > Tag > Add Tag... > + > type Sheep > Save. Select the Sheep prefab again and set Tag: Sheep. Leave the prefab with the < arrow in the Hierarchy.",
+        "Player > Inspector > Box Collider: tick Is Trigger.",
+        "Add the OnTriggerEnter method below to PlayerController.",
+        "Hierarchy > + > Create Empty, name it Sheep Destroyer. Position: X 0, Y -10, Z 0. Add Component > Box Collider: Is Trigger ticked, Size X 100, Y 1, Z 100.",
+        "Create the SheepDestroyer script below and drag it onto Sheep Destroyer.",
+        "Press Play."
+      ],
+      "code": [
+        {
+          "file": "PlayerController.cs (end of the file)",
+          "text": "    private void FixedUpdate()\n    {\n        // Move on the physics step.\n        playerRigidbody.linearVelocity = new Vector3(moveInput * moveSpeed, 0f, 0f);\n    }\n\n    private void OnTriggerEnter(Collider other)\n    {\n        if (other.CompareTag(\"Sheep\"))\n        {\n            // Caught!\n            Destroy(other.gameObject);\n        }\n    }\n}",
+          "highlight": [
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ]
+        },
+        {
+          "file": "SheepDestroyer.cs",
+          "text": "using UnityEngine;\n\npublic class SheepDestroyer : MonoBehaviour\n{\n    private void OnTriggerEnter(Collider other)\n    {\n        if (other.CompareTag(\"Sheep\"))\n        {\n            Destroy(other.gameObject);\n        }\n    }\n}",
+          "highlight": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "why": [
+        "A trigger collider does not block anything - objects pass through and Unity only calls OnTriggerEnter. A solid collider calls OnCollisionEnter and bounces. That is why the sheep stopped bouncing.",
+        "CompareTag(\"Sheep\") is faster than tag == \"Sheep\" and reports a typo in the tag name as an error instead of silently never matching.",
+        "The destroyer sits below the screen and is huge (100 x 100), so no sheep can miss it. Without it, missed sheep would fall forever and pile up in memory."
+      ],
+      "check": "Sheep that hit the box vanish. Sheep that miss fall off the screen; in the Hierarchy you see clones appear and disappear.",
+      "labStage": 7
+    },
+    {
+      "id": "08-random-x",
+      "title": "Random positions: design the level",
+      "goal": "Sheep drop from random places across the whole width.",
+      "actions": [
+        "Change SheepSpawner to the code below.",
+        "Sheep Spawner > Inspector > Sheep Spawner (Script) > Spawn Range X: 15.",
+        "Optional: Hierarchy > + > 3D Object > Cube a few times as background scenery (e.g. tall pillars far behind at Z 80). Give them a look; they do not touch the play plane.",
+        "Press Play."
+      ],
+      "code": [
+        {
+          "file": "SheepSpawner.cs",
+          "text": "using UnityEngine;\n\npublic class SheepSpawner : MonoBehaviour\n{\n    [SerializeField] private GameObject sheepPrefab;\n    [SerializeField] private float spawnInterval = 1f;\n    [SerializeField] private float spawnRangeX = 10f;\n\n    private float timer;\n\n    private void Update()\n    {\n        timer += Time.deltaTime;\n        if (timer > spawnInterval)\n        {\n            float x = Random.Range(-spawnRangeX, spawnRangeX);\n            Vector3 position = new Vector3(x, transform.position.y, transform.position.z);\n            Instantiate(sheepPrefab, position, sheepPrefab.transform.rotation);\n            timer = 0f;\n        }\n    }\n}",
+          "highlight": [
+            7,
+            16,
+            17,
+            18
+          ]
+        }
+      ],
+      "why": [
+        "Random.Range(-spawnRangeX, spawnRangeX) gives a float between -15 and 15, ends included. Y and Z come from the spawner, so only X changes.",
+        "The script says 10, the Inspector says 15 - the game uses 15. A [SerializeField] default applies only when the component is first added; after that the scene's saved value wins."
+      ],
+      "check": "Sheep fall from all over the top edge. Catching them gets harder.",
+      "labStage": 8
+    },
+    {
+      "id": "09-game-over",
+      "title": "Sheep counter and Game Over",
+      "goal": "\"Sheep Left: 5\" counts down for every missed sheep; at 0 the game says GAME OVER and freezes.",
+      "actions": [
+        "Hierarchy > + > UI > Text - TextMeshPro. If Unity asks, click Import TMP Essentials, then close the window. A Canvas and an EventSystem appear; rename the text Sheep Left Text.",
+        "Sheep Left Text > Inspector > Rect Transform: anchor preset top-left (click the square, hold Alt+Shift, pick top-left). Font Size 36. Text: Sheep Left: 5.",
+        "Canvas > right-click > UI > Text - TextMeshPro again, name it Game Over Text. Anchor: middle-centre, Font Size 72, Alignment centre, Text: GAME OVER. Untick the checkbox next to its name to hide it.",
+        "Hierarchy > + > Create Empty, name it Game Manager. Create the GameManager script below and drag it onto it.",
+        "Game Manager > Inspector: drag Sheep Left Text into Sheep Left Text, Game Over Text into Game Over Text. Starting Sheep Left: 5.",
+        "Change SheepDestroyer to the code below. Sheep Destroyer > Inspector: drag Game Manager into its Game Manager field.",
+        "Press Play and miss five sheep."
+      ],
+      "code": [
+        {
+          "file": "GameManager.cs",
+          "text": "using TMPro;\nusing UnityEngine;\n\npublic class GameManager : MonoBehaviour\n{\n    [SerializeField] private TMP_Text sheepLeftText;\n    [SerializeField] private GameObject gameOverText;\n    [SerializeField] private int startingSheepLeft = 5;\n\n    private int sheepLeft;\n\n    private void Start()\n    {\n        sheepLeft = startingSheepLeft;\n        UpdateText();\n    }\n\n    public void LostSheep()\n    {\n        sheepLeft--;\n        UpdateText();\n        if (sheepLeft <= 0)\n        {\n            gameOverText.SetActive(true);\n            Time.timeScale = 0f;\n        }\n    }\n\n    private void UpdateText()\n    {\n        sheepLeftText.text = \"Sheep Left: \" + sheepLeft;\n    }\n}",
+          "highlight": [
+            6,
+            7,
+            8,
+            10,
+            12,
+            13,
+            14,
+            15,
+            16,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            29,
+            30,
+            31,
+            32
+          ]
+        },
+        {
+          "file": "SheepDestroyer.cs",
+          "text": "using UnityEngine;\n\npublic class SheepDestroyer : MonoBehaviour\n{\n    [SerializeField] private GameManager gameManager;\n\n    private void OnTriggerEnter(Collider other)\n    {\n        if (other.CompareTag(\"Sheep\"))\n        {\n            gameManager.LostSheep();\n            Destroy(other.gameObject);\n        }\n    }\n}",
+          "highlight": [
+            5,
+            11
+          ]
+        }
+      ],
+      "why": [
+        "startingSheepLeft is the designer's number; sheepLeft is the live one. Copying it in Start keeps the two apart.",
+        "Time.timeScale = 0 stops physics and Time.deltaTime, so sheep freeze and the spawner timer stops. Update still runs - that is how a pause menu can still read keys.",
+        "<= 0 instead of == 0: safe even if two sheep land in the same frame.",
+        "This step has three new Inspector fields. If one stays None, the first lost sheep throws a NullReferenceException - the classic scene-wiring bug."
+      ],
+      "check": "The counter goes 5, 4, 3, 2, 1, 0 as sheep fall past; at 0 GAME OVER appears and everything stops.",
+      "labStage": 9
+    },
+    {
+      "id": "10-level-up",
+      "title": "Level up: our architecture (singleton + events)",
+      "goal": "Same game, but built like LuaLander and FerryHeist: GameManager only counts, a GameUI listens and draws.",
+      "actions": [
+        "Replace GameManager with the code below. Its two text fields disappear from the Inspector - that is expected.",
+        "Create the GameUI script below and drag it onto Canvas. Canvas > Game UI: drag Sheep Left Text and Game Over Text into its fields.",
+        "Replace SheepDestroyer with the code below. Its Game Manager field disappears - no more wiring.",
+        "Check Game Over Text: it may stay ticked now; GameUI hides it at start.",
+        "Press Play and play until Game Over."
+      ],
+      "code": [
+        {
+          "file": "GameManager.cs",
+          "text": "using System;\nusing UnityEngine;\n\npublic class GameManager : MonoBehaviour\n{\n    public static GameManager Instance { get; private set; }\n\n    public event EventHandler OnSheepLeftChanged;\n    public event EventHandler OnGameOver;\n\n    [SerializeField] private int startingSheepLeft = 5;\n\n    private int sheepLeft;\n\n    private void Awake()\n    {\n        Instance = this;\n        Time.timeScale = 1f;\n        sheepLeft = startingSheepLeft;\n    }\n\n    public void LostSheep()\n    {\n        if (sheepLeft <= 0)\n        {\n            return;\n        }\n\n        sheepLeft--;\n        OnSheepLeftChanged?.Invoke(this, EventArgs.Empty);\n        if (sheepLeft <= 0)\n        {\n            Time.timeScale = 0f;\n            OnGameOver?.Invoke(this, EventArgs.Empty);\n        }\n    }\n\n    public int GetSheepLeft()\n    {\n        return sheepLeft;\n    }\n}",
+          "highlight": [
+            6,
+            8,
+            9,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            24,
+            25,
+            26,
+            27,
+            30,
+            34,
+            38,
+            39,
+            40,
+            41
+          ]
+        },
+        {
+          "file": "GameUI.cs",
+          "text": "using System;\nusing TMPro;\nusing UnityEngine;\n\npublic class GameUI : MonoBehaviour\n{\n    [SerializeField] private TMP_Text sheepLeftText;\n    [SerializeField] private GameObject gameOverText;\n\n    private void Start()\n    {\n        GameManager.Instance.OnSheepLeftChanged += GameManager_OnSheepLeftChanged;\n        GameManager.Instance.OnGameOver += GameManager_OnGameOver;\n        gameOverText.SetActive(false);\n        UpdateText();\n    }\n\n    private void GameManager_OnSheepLeftChanged(object sender, EventArgs e)\n    {\n        UpdateText();\n    }\n\n    private void GameManager_OnGameOver(object sender, EventArgs e)\n    {\n        gameOverText.SetActive(true);\n    }\n\n    private void UpdateText()\n    {\n        sheepLeftText.text = \"Sheep Left: \" + GameManager.Instance.GetSheepLeft();\n    }\n}",
+          "highlight": [
+            7,
+            8,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            18,
+            19,
+            20,
+            21,
+            23,
+            24,
+            25,
+            26,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        {
+          "file": "SheepDestroyer.cs",
+          "text": "using UnityEngine;\n\npublic class SheepDestroyer : MonoBehaviour\n{\n    private void OnTriggerEnter(Collider other)\n    {\n        if (other.CompareTag(\"Sheep\"))\n        {\n            GameManager.Instance.LostSheep();\n            Destroy(other.gameObject);\n        }\n    }\n}",
+          "highlight": [
+            9
+          ]
+        }
+      ],
+      "why": [
+        "Singleton: GameManager stores itself in a static Instance in Awake, so any script reaches it as GameManager.Instance - no Inspector field to forget.",
+        "Events: GameManager only announces \"sheep left changed\" and \"game over\". GameUI listens and updates the text. Logic never touches UI - you can redesign the UI without opening GameManager.",
+        "Instance is set in Awake, listeners subscribe in Start: every Awake runs before any Start, so Instance is ready when GameUI asks.",
+        "Time.timeScale = 1 in Awake: timeScale survives a scene reload, so a future Restart button would otherwise load a frozen game (a LuaLander lesson)."
+      ],
+      "check": "The game plays exactly as after step 9 - the change is inside, and the Inspector has fewer fields to wire.",
+      "labStage": 10
+    },
+    {
+      "id": "11-make-it-yours",
+      "title": "Make it yours",
+      "goal": "The course game is done. Now it becomes your game - you decide what comes next.",
+      "actions": [
+        "Pick one idea and tell the agent - we build it together, step by step like this course:",
+        "Score: +1 for every caught sheep, shown next to Sheep Left (a new event OnSheepCaught).",
+        "Difficulty ramp: spawnInterval shrinks a little after every catch, down to a minimum.",
+        "Particles: a puff when a sheep is caught - a first Particle Lab exercise.",
+        "Restart: a button on Game Over that reloads the scene (Time.timeScale = 1 is already handled).",
+        "Real models: swap the sphere and cube for your own Blender sheep and catcher."
+      ],
+      "code": [],
+      "why": [
+        "Every idea reuses what you just built: events (score), timers (difficulty), prefabs (particles), scenes and timeScale (restart).",
+        "Once a part is built, SharpDul can quiz you on it - quizzes only cover what you have built yourself."
+      ],
+      "check": "You have a playable Falling Frenzy built from scratch.",
+      "labStage": 10
+    }
+  ]
+}

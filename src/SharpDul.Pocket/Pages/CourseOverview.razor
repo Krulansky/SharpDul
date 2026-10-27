@@ -1,0 +1,60 @@
+@page "/course/{CourseId}"
+@using SharpDul.Pocket.Localization
+@using SharpDul.Pocket.Models
+@using SharpDul.Pocket.Services
+@inject CourseLibrary Courses
+@inject ProgressStore Progress
+@inject Localizer Loc
+
+<PageTitle>SharpDul · @(course?.Title ?? "Course")</PageTitle>
+
+<nav class="top-bar">
+    <a href="">@Loc["home"]</a>
+    <span class="muted">@Loc["course"]</span>
+</nav>
+
+@if (course == null || progress == null)
+{
+    <p class="muted">@Loc["loading"]</p>
+}
+else
+{
+    <h1>@course.Title</h1>
+    <p>@course.Description</p>
+
+    <section class="card">
+        <div class="row">
+            <strong>@Loc.Format("stepsBuilt", DoneCount, course.Steps.Count)</strong>
+        </div>
+        <div class="bar"><div class="bar-fill" style="width:@(course.Steps.Count == 0 ? 0 : DoneCount * 100 / course.Steps.Count)%"></div></div>
+        <p class="muted source">@course.Source</p>
+    </section>
+
+    @for (int i = 0; i < course.Steps.Count; i++)
+    {
+        CourseStep step = course.Steps[i];
+        int number = i + 1;
+        bool done = progress.CompletedSteps.Contains($"{course.Id}/{step.Id}");
+        <a class="big-button step-link @(done ? "done" : "")" href="course/@course.Id/@number">
+            <span><span class="step-number">@(done ? "✓" : number.ToString())</span> @step.Title</span>
+            <small>@step.Goal</small>
+        </a>
+    }
+}
+
+@code {
+    [Parameter] public string CourseId { get; set; } = "";
+    [CascadingParameter] public Language Language { get; set; }
+
+    private Course? course;
+    private ProgressData? progress;
+
+    private int DoneCount => course == null || progress == null ? 0
+        : course.Steps.Count(step => progress.CompletedSteps.Contains($"{course.Id}/{step.Id}"));
+
+    protected override async Task OnParametersSetAsync()
+    {
+        course = await Courses.GetCourseAsync(CourseId);
+        progress = await Progress.GetAsync();
+    }
+}

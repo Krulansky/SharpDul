@@ -1,0 +1,142 @@
+@page "/course/{CourseId}/{StepNumber:int}"
+@using SharpDul.Pocket.Localization
+@using SharpDul.Pocket.Models
+@using SharpDul.Pocket.Services
+@inject CourseLibrary Courses
+@inject ProgressStore Progress
+@inject Localizer Loc
+@inject IJSRuntime JS
+
+<PageTitle>SharpDul · @(step?.Title ?? "Course")</PageTitle>
+
+<nav class="top-bar">
+    <a href="course/@CourseId">← @(course?.Title ?? "")</a>
+    @if (course != null)
+    {
+        <span class="muted">@Loc.Format("stepOf", StepNumber, course.Steps.Count)</span>
+    }
+</nav>
+
+@if (course == null || progress == null)
+{
+    <p class="muted">@Loc["loading"]</p>
+}
+else if (step == null)
+{
+    <section class="card"><h2>@Loc["notFound"]</h2></section>
+}
+else
+{
+    <h1>@step.Title</h1>
+    <p class="goal">@step.Goal</p>
+
+    <section class="card">
+        <h2>@Loc["inUnity"]</h2>
+        <ol class="actions">
+            @foreach (string action in step.Actions)
+            {
+                <li>@action</li>
+            }
+        </ol>
+    </section>
+
+    @foreach (CourseCode file in step.Code)
+    {
+        string[] lines = file.Text.Split('\n');
+        <section class="card">
+            <div class="row">
+                <h2 class="code-file">@file.File</h2>
+                <button class="hint-button copy-button" @onclick="() => CopyAsync(file)">@(copied == file ? Loc["copied"] : Loc["copy"])</button>
+            </div>
+            <pre class="code"><code>@for (int i = 0; i < lines.Length; i++)
+{<span class="code-line @(file.Highlight.Contains(i + 1) ? "hl" : "")">@lines[i]</span>}</code></pre>
+            @if (file.Highlight.Count > 0)
+            {
+                <p class="muted source">@Loc["highlightedIsNew"]</p>
+            }
+        </section>
+    }
+
+    <section class="card">
+        <h2>@Loc["whyItWorks"]</h2>
+        <ul class="why">
+            @foreach (string why in step.Why)
+            {
+                <li>@why</li>
+            }
+        </ul>
+    </section>
+
+    <section class="card check">
+        <h2>@Loc["checkInPlay"]</h2>
+        <p>@step.Check</p>
+    </section>
+
+    @if (step.LabStage > 0 && !string.IsNullOrEmpty(course.LabPath))
+    {
+        <a class="big-button" href="@course.LabPath?stage=@step.LabStage">
+            <span>▶ @Loc["previewStep"]</span>
+            <small>@Loc["previewStepDesc"]</small>
+        </a>
+    }
+
+    <button class="big-button @(IsDone ? "" : "primary")" @onclick="ToggleDoneAsync">
+        <span>@(IsDone ? "✓ " + Loc["builtIt"] : Loc["markBuilt"])</span>
+        @if (xpMessage != null)
+        {
+            <small>@xpMessage</small>
+        }
+    </button>
+
+    <div class="step-nav">
+        @if (StepNumber > 1)
+        {
+            <a class="big-button" href="course/@CourseId/@(StepNumber - 1)">← @Loc["previous"]</a>
+        }
+        @if (StepNumber < course.Steps.Count)
+        {
+            <a class="big-button" href="course/@CourseId/@(StepNumber + 1)">@Loc["next"] →</a>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string CourseId { get; set; } = "";
+    [Parameter] public int StepNumber { get; set; }
+    [CascadingParameter] public Language Language { get; set; }
+
+    private Course? course;
+    private CourseStep? step;
+    private ProgressData? progress;
+    private CourseCode? copied;
+    private string? xpMessage;
+
+    private bool IsDone => course != null && step != null && progress != null
+        && progress.CompletedSteps.Contains($"{course.Id}/{step.Id}");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        course = await Courses.GetCourseAsync(CourseId);
+        progress = await Progress.GetAsync();
+        step = course != null && StepNumber >= 1 && StepNumber <= course.Steps.Count ? course.Steps[StepNumber - 1] : null;
+        copied = null;
+        xpMessage = null;
+    }
+
+    private async Task CopyAsync(CourseCode file)
+    {
+        await JS.InvokeVoidAsync("sharpDul.copyText", file.Text);
+        copied = file;
+    }
+
+    private async Task ToggleDoneAsync()
+    {
+        if (course == null || step == null)
+        {
+            return;
+        }
+
+        int xp = await Progress.SetStepDoneAsync(course.Id, step.Id, !IsDone);
+        xpMessage = xp > 0 ? $"+{xp} XP" : null;
+    }
+}

@@ -19,4 +19,8 @@ public class ProgressData
     public int Xp { get; set; }
     public HashSet<DateOnly> ActiveDays { get; set; } = new();
     public Dictionary<string, CardProgress> Cards { get; set; } = new();
+    /// <summary>Course steps marked as built, as "&lt;courseId&gt;/&lt;stepId&gt;".</summary>
+    public HashSet<string> CompletedSteps { get; set; } = new();
+    /// <summary>Steps that already paid out XP, so ticking a step on and off cannot farm XP.</summary>
+    public HashSet<string> StepsEverRewarded { get; set; } = new();
 }

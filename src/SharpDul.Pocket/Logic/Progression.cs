@@ -6,6 +6,7 @@ namespace SharpDul.Pocket.Logic;
 public static class Progression
 {
     public const int ActiveDaysWindow = 7;
+    public const int XpForCourseStep = 25;
     private const int XpForWrongAnswer = 2;
 
     public static int XpForAnswer(Difficulty difficulty, bool correct)

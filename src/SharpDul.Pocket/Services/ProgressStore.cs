@@ -54,6 +54,31 @@ public class ProgressStore
         return xp;
     }
 
+    /// <summary>Marks a course step as built (or not). XP only the first time, so un-ticking is free.</summary>
+    public async Task<int> SetStepDoneAsync(string courseId, string stepId, bool done)
+    {
+        ProgressData data = await GetAsync();
+        string key = $"{courseId}/{stepId}";
+
+        int xp = 0;
+        if (done)
+        {
+            if (data.CompletedSteps.Add(key) && data.StepsEverRewarded.Add(key))
+            {
+                xp = Progression.XpForCourseStep;
+                data.Xp += xp;
+            }
+            data.ActiveDays.Add(Today);
+        }
+        else
+        {
+            data.CompletedSteps.Remove(key);
+        }
+
+        await SaveAsync();
+        return xp;
+    }
+
     public async Task SetLanguageAsync(string languageCode)
     {
         ProgressData data = await GetAsync();

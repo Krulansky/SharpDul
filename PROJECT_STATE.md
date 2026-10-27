@@ -2,7 +2,7 @@
 
 Session handoff between machines and sessions. Keep it short and current.
 
-## Where we are (2026-10-26)
+## Where we are (2026-10-27)
 
 **First prototype of SharpDul Pocket** (Blazor WebAssembly PWA, .NET 10):
 
@@ -28,6 +28,18 @@ Session handoff between machines and sessions. Keep it short and current.
   card). Same landing rules and score formula as the game (pad multiplier 1). Physics is a
   close approximation of Box2D, not bit-exact. An autopilot test landed successfully
   (speed 1.05, score 395).
+- **Courses** (build-along, not quizzes): `Pages/CourseOverview.razor`, `CourseStepPage.razor`,
+  `Services/CourseLibrary.cs`, content in `wwwroot/content/courses/`. Each step: goal, Unity
+  click paths, code with new lines highlighted + Copy, why it works, Play-mode check, Lab
+  preview, "I built it in Unity" (+25 XP once; stored in `CompletedSteps`).
+  First course: **Falling Frenzy**, 11 steps (project setup -> physics -> input -> prefab +
+  spawner -> triggers -> random X -> UI/Game Over -> our singleton+events architecture ->
+  "make it yours"). Primitives instead of the course's models. EN/SK/KR. Sources:
+  `tools/build_falling_frenzy_course.py`, `tools/falling_frenzy_course_sk.py`, `_ko.py`.
+- **Mechanics Lab · Falling Frenzy** (`Pages/FrenzyLab.razor`, `Logic/FallingFrenzySim.cs`,
+  `wwwroot/js/fallingfrenzy.js`): the game as it behaves after any course step (stage 1-10,
+  `?stage=N`), A/D or hold-buttons, sliders for moveSpeed, spawnInterval, spawnRangeX,
+  startingSheepLeft, and a velocity-vs-AddForce toggle; lit code lines.
 - Look: neutral grey placeholders. The director designs the visual identity.
 
 Verified in headless Chromium at iPhone 13 size, served under `/SharpDul/` like GitHub Pages:
@@ -65,5 +77,5 @@ knowledge/   study notes per source project (e.g. falling-frenzy.md) - raw mater
 1. Director tries the Mechanics Lab and the language switch on the iPhone.
 2. More LuaLander questions, then Medium level (`?.Invoke`, dot product, SetActive vs events).
 3. Particle Lab (sandbox + "recreate this effect").
-4. Falling Frenzy (GameDevTV course): notes in `knowledge/falling-frenzy.md`; content pack
-   from its quiz ideas; later the director rebuilds it as an own project with the agent.
+4. Director builds Falling Frenzy in Unity with the course (own repo, e.g. FallingFrenzy).
+   Quiz pack from it only for steps actually built.

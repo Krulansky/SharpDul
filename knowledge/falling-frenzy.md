@@ -140,7 +140,11 @@ The direct reference is simpler and fine for a 4-script game. It is also the cla
 **scene-wiring trap**: if `gameManager` is left `None` in the Inspector, the first lost sheep
 throws a `NullReferenceException` - no compile error.
 
-## Quiz material (for a future content pack)
+## Quiz material - only after the director has built it
+
+Director rule (2026-10-27): no quizzes on things not built yet. Falling Frenzy is now a
+build-along course in SharpDul (`content/courses/falling-frenzy.json`). Once the director has
+built a step, these become questions.
 
 Easy (in game terms, answer visible in the snippet):
 
@@ -157,7 +161,7 @@ Medium:
 8. Trigger vs collision - why does `OnCollisionEnter` never fire for the catcher?
 9. Find the bug: the sheep tag is spelled `"sheep"` in the code.
 
-## Rebuild plan (with the agent, after SharpDul's basics)
+## Rebuild plan (now the SharpDul course "Falling Frenzy")
 
 Build it as our own project, in **Unity `6000.3.14f1`** (our standard version), using our
 architecture instead of copying the course:
