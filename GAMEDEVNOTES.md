@@ -446,3 +446,97 @@ is momentum, and momentum is what makes landing a lander hard and satisfying.
 platformer's horizontal run want velocity (often with a little smoothing). Vehicles, space
 and water want force plus damping. Mixing them on one body (setting velocity *and* adding
 force) makes the forces disappear every frame.
+
+## Unity 2D: lessons from a complete combat course
+
+**Source:** GameDev.tv, *Unity 2D RPG: Complete Combat System* (87 lectures), followed in
+2DTopDownPixelCombat from 15 to 29 October 2026, plus every bug we hit along the way. The
+project's own map of the systems is in `knowledge/2d-topdown-pixel-combat.md`; this section
+keeps only what carries over to any Unity project.
+
+### Patterns worth reusing
+
+- **`Singleton<T>` base class** with `DontDestroyOnLoad` only on root objects; children are
+  carried across scenes by a root parent. Every scene can then contain its own copy of the
+  Player, UI and managers for testing, and the duplicates destroy themselves on load.
+- **Interfaces for "anything that can X".** `IWeapon.Attack()` lets the inventory swap
+  glaive, bow and staff without knowing which is which; `IEnemy.Attack()` lets one
+  `EnemyAI` state machine (an `enum` + `switch`: Roaming, Attacking) drive a melee slime, a
+  lobbing grape and a bullet-hell shooter.
+- **ScriptableObject for data** (`WeaponInfo`: prefab, cooldown, damage, range). Balancing
+  is editing an asset, not code.
+- **One small component per behaviour:** `Knockback`, `Flash`, `DamageSource`,
+  `Destructible`, `Indestructible`, `PickUpSpawner`, `SpriteFade`, `SelfDestroy`. Behaviour is
+  assembled in the Inspector.
+- **Fake height in top-down with an `AnimationCurve`.** Lerp the ground position linearly and
+  add `curve.Evaluate(t) * height` on Y. The same 10 lines make loot pop out of bushes and a
+  grape's projectile arc; a separate shadow lerps along the ground only.
+- **Scene transitions by name.** An exit stores a transition name and loads a scene; in the
+  new scene the entrance with the matching name moves the persistent player to itself. Two
+  rules: an entrance name must be **unique within its scene** (two `West_Entrance`s means a
+  random spawn point), and every `sceneToLoad` must exist **and be in Build Settings**, or the
+  player is stuck behind the fade to black.
+- **Bullet patterns from three numbers:** burst count, projectiles per burst, angle spread.
+  Stagger and oscillate on top give spirals. Spawn at `centre + r * (cos a, sin a)` and set
+  `bullet.transform.right` to point outward.
+
+### Traps we fell into (look for these first)
+
+- **`Destroy()` inside a base `Awake()` runs the child's `OnDisable()` before the child's own
+  `Awake()` has finished.** Anything created after `base.Awake()` is still `null` there. Use
+  `?.` in `OnDisable`, or create the object before calling `base.Awake()`.
+- **Input System: every `Enable()` in `OnEnable` needs a `Disable()` in `OnDisable`.** Otherwise
+  destroyed copies leave their actions enabled and the garbage collector later prints
+  "This will cause a leak" - the error shows up at a random moment, far from the cause.
+- **An animation event is not guaranteed to fire.** If the object is destroyed mid-animation
+  (weapon switched mid-swing), "turn the damage collider off" never runs and the player gets
+  invisible thorns. Undo state in `OnDestroy` / `OnDisable` as well.
+- **A one-line `if` without braces** guards only the next statement: pickups were destroyed by
+  touching *anything* because `Destroy()` sat outside the `if`.
+- **`OnCollisionStay2D` damage runs every physics step.** It needs an invulnerability window
+  (`canTakeDamage` + a recovery coroutine), or contact kills instantly.
+- **`GameObject.Find("Name")`** silently returns `null` if the name differs by one character
+  or the object is inactive. Keep such names in `const string` fields.
+- **IDE auto-imports pick the wrong namespace.** `Image` from
+  `Microsoft.Unity.VisualStudio.Editor` instead of `UnityEngine.UI` - no `.sprite`, and an
+  editor-only `using` in a game script also breaks the build. For UI types, always
+  `UnityEngine.UI`.
+- **A script on the wrong object** (`GetComponent<Image>()` on an object with a
+  SpriteRenderer) throws every frame. Search the Hierarchy with `t:ScriptName` to find every
+  copy.
+- **Enemy and player projectiles sharing one script** need the flag checked everywhere they
+  are consumed: enemy bullets were breaking bushes because `Destructible` only checked
+  "is it a Projectile".
+
+### Tilemaps and rule tiles
+
+- **A rule tile sees neighbours only on its own tilemap.** Paint one rule tile across two
+  tilemaps and the edges at the boundary pick wrong pieces.
+- **The editor shows a cached result; Play recalculates the rules.** If artefacts appear on
+  Play and vanish on Ctrl+Z, the rules are what is wrong - Ctrl+Z only restores the cache.
+  Tilemap component > ... > *Refresh All Tiles* shows the real result in the editor.
+- **Two renderers with the same sorting layer and order draw in undefined order**, and the
+  order can change between runs. Give every tilemap its own Order in Layer.
+
+### Animation and particles (2D)
+
+- **A clip that "stops working" usually has Loop Time off.** Check it first.
+- **`SetTrigger("X")` on a parameter that does not exist** only warns, and if it is in a
+  loop it floods the console with 999+ warnings.
+- **Particles: Shape > Align To Direction is 3D.** It turns flat 2D sprites edge-on to the
+  camera, so they disappear. In 2D, control travel direction with Shape rotation and sprite
+  orientation with Start Rotation or Renderer Flip. *(Tried and failed, 2026-10-29.)*
+- **A Shape scale of 0 on any axis** gives "trying to spawn on a mesh with zero surface area"
+  and every particle spawns in one point. Keep scale Z at 1.
+- **"Emit from four walls inwards" = four emitters**, one per wall. A single circle with
+  negative start speed was suggested as a one-system alternative; it did not work in our
+  setup and is not recommended. *(Failed experiment, 2026-10-29.)*
+
+### Editor and tooling
+
+- **`OnApplicationFocus` fires on OS-level focus (Alt+Tab), not when clicking between Unity's
+  own windows.** Pressing Esc in Play mode shows the OS cursor until something hides it again.
+- **GitHub Desktop "No content changes found"** on Unity settings files means only the file's
+  timestamp changed (Unity re-saved identical content). Discard it; `git status` clears it.
+- **Commit before an experiment.** A saved-over prefab came back in one command
+  (`git restore <file>`) only because the last commit had it.
