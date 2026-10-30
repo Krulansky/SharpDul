@@ -95,6 +95,13 @@ gates is in `HANDOVER.md` on the director's PC.
 
 ## Known quirks
 
+- `Shooter.OnValidate`: both lines set `stagger = true` (`if (oscillate)` and `if (!oscillate)`),
+  so stagger can never be switched off in the Inspector. Probably meant `stagger = false` in the second.
+- `Shooter`: with an even `projectilesPerBurst` the cone has no bullet in its centre - the Ghost's
+  8 over 165° never hit a player who stands still. `projectilesPerBurst = 1` with `angleSpread > 0`
+  divides by zero (`angleStep` = Infinity) and the one bullet flies along the cone's edge.
+- `Stamina.timeBetweenStaminaRefresh` is 3 in the script but **2** on the Player prefab.
+
 - After death Town loads, but `SceneManagement` remembers the last transition name. If it
   matches an entrance in Town, the player respawns at that gate instead of the start.
 - `Player Controls.cs` is not next to its `.inputactions`; when the inputs change, Unity

@@ -1,0 +1,452 @@
+@page "/lab/combat"
+@implements IAsyncDisposable
+@using System.Diagnostics
+@using System.Globalization
+@using SharpDul.Pocket.Localization
+@using SharpDul.Pocket.Logic
+@inject IJSRuntime JS
+@inject Localizer Loc
+
+@* The Ghost fight from 2DTopDownPixelCombat: canvas, stick + Dash, live code, tuning. *@
+
+<PageTitle>SharpDul · Combat Lab</PageTitle>
+
+<nav class="top-bar">
+    <a href="">@Loc["home"]</a>
+    <span class="muted">@Loc["mechanicsLab"] · 2D Combat</span>
+</nav>
+
+<div class="lab-stage">
+    <canvas @ref="canvas" class="lab-canvas combat"></canvas>
+</div>
+
+@* The lit lines, right under the game, so you see them while you play. *@
+<pre class="code lab-live tall"><code>@foreach (CodeLine line in CodeLines().Where(line => IsLit(line.Key) && !QuietKeys.Contains(line.Key!)).DefaultIfEmpty(new CodeLine(null, "// ...")))
+{<span class="code-line @(line.Key != null ? "hl" : "")">@line.Text</span>}</code></pre>
+
+<div class="lab-controls">
+    <div @ref="stick" class="lab-stick" aria-label="Move"><div @ref="knob" class="lab-stick-knob"></div></div>
+    <button @ref="dashButton" class="lab-key dash">Dash</button>
+</div>
+<p class="muted lab-note">@Loc["combatControls"] · @Loc.Format("combatStats", sim.BulletsFired, sim.Bullets.Count, sim.Deaths)</p>
+
+<section class="card">
+    <h2>@Loc["patterns"]</h2>
+    <div class="preset-row">
+        @foreach (Preset preset in Presets)
+        {
+            <button class="chip-button" @onclick="() => ApplyPreset(preset)">@Loc[preset.Key]</button>
+        }
+    </div>
+    @if (staggerForced)
+    {
+        <p class="lab-warning">@Loc["staggerForced"]</p>
+    }
+    <label class="lab-toggle">
+        <input type="checkbox" checked="@onValidateAsInProject" @onchange="OnValidateModeChanged" />
+        <span>@Loc["onValidateAsInProject"]</span>
+    </label>
+    <label class="lab-toggle">
+        <input type="checkbox" checked="@sim.WatchOnly" @onchange="e => sim.WatchOnly = e.Value is true" />
+        <span>@Loc["watchOnly"]</span>
+    </label>
+    <button class="big-button" @onclick="Retry">@Loc["retry"]</button>
+</section>
+
+<section class="card">
+    <h2>Shooter · Ghost</h2>
+    @Slider("bulletMoveSpeed", sim.Tuning.BulletMoveSpeed, 0.5f, 20f, 0.5f, v => sim.Tuning.BulletMoveSpeed = v)
+    @Slider("burstCount", sim.Tuning.BurstCount, 1, 20, 1, v => sim.Tuning.BurstCount = (int)v)
+    @Slider("projectilesPerBurst", sim.Tuning.ProjectilesPerBurst, 1, 36, 1, v => sim.Tuning.ProjectilesPerBurst = (int)v)
+    @Slider("angleSpread", sim.Tuning.AngleSpread, 0, 359, 1, v => sim.Tuning.AngleSpread = v)
+    @Slider("startingDistance", sim.Tuning.StartingDistance, 0.1f, 3f, 0.1f, v => sim.Tuning.StartingDistance = v)
+    @Slider("timeBetweenBursts", sim.Tuning.TimeBetweenBursts, 0.1f, 3f, 0.05f, v => sim.Tuning.TimeBetweenBursts = v)
+    @Slider("restTime", sim.Tuning.RestTime, 0.1f, 3f, 0.1f, v => sim.Tuning.RestTime = v)
+    <label class="lab-toggle">
+        <input type="checkbox" checked="@sim.Tuning.Stagger" @onchange='e => OnToggle(e, v => sim.Tuning.Stagger = v, "stagger")' />
+        <code>stagger</code>
+    </label>
+    <label class="lab-toggle">
+        <input type="checkbox" checked="@sim.Tuning.Oscillate" @onchange='e => OnToggle(e, v => sim.Tuning.Oscillate = v, "oscillate")' />
+        <code>oscillate</code>
+    </label>
+</section>
+
+<section class="card">
+    <h2>EnemyAI · Ghost</h2>
+    @Slider("attackRange", sim.Tuning.AttackRange, 0, 9, 0.5f, v => sim.Tuning.AttackRange = v)
+    @Slider("attackCooldown", sim.Tuning.AttackCooldown, 0.1f, 6f, 0.1f, v => sim.Tuning.AttackCooldown = v)
+    <label class="lab-toggle">
+        <input type="checkbox" checked="@sim.Tuning.StopMovingWhileAttacking" @onchange='e => OnToggle(e, v => sim.Tuning.StopMovingWhileAttacking = v, "stopMovingWhileAttacking")' />
+        <code>stopMovingWhileAttacking</code>
+    </label>
+</section>
+
+<section class="card">
+    <h2>Player</h2>
+    @Slider("moveSpeed", sim.Tuning.MoveSpeed, 1, 10, 0.5f, v => sim.SetMoveSpeed(v))
+    @Slider("dashSpeed", sim.Tuning.DashSpeed, 1, 8, 0.5f, v => sim.Tuning.DashSpeed = v)
+    @Slider("knockBackThrustAmount", sim.Tuning.KnockBackThrustAmount, 0, 30, 1, v => sim.Tuning.KnockBackThrustAmount = v)
+    @Slider("knockBacktime", sim.Tuning.KnockBackTime, 0.05f, 1f, 0.05f, v => sim.Tuning.KnockBackTime = v)
+    @Slider("damageRecoveryTime", sim.Tuning.DamageRecoveryTime, 0, 3, 0.1f, v => sim.Tuning.DamageRecoveryTime = v)
+    @Slider("timeBetweenStaminaRefresh", sim.Tuning.TimeBetweenStaminaRefresh, 1, 6, 1, v => sim.Tuning.TimeBetweenStaminaRefresh = (int)v)
+    <button class="link-button" @onclick="ResetValues">@Loc["resetValues"]</button>
+</section>
+
+<section class="card">
+    <h2>@Loc["tryThis"]</h2>
+    <ul class="why">
+        @foreach (string tip in new[] { "combatTip1", "combatTip2", "combatTip3", "combatTip4", "combatTip5" })
+        {
+            <li>@Loc[tip]</li>
+        }
+    </ul>
+</section>
+
+<section class="card">
+    <h2>@Loc["code"]</h2>
+    <pre class="code"><code>@foreach (CodeLine line in CodeLines())
+{<span class="code-line @(IsLit(line.Key) ? "hl" : "")">@line.Text</span>}</code></pre>
+    <p class="muted source">2DTopDownPixelCombat · Scripts/Enemies/EnemyAI.cs, Shooter.cs · Weapons/Projectile.cs · Player/PlayerController.cs, PlayerHealth.cs, Stamina.cs · Misc/Knockback.cs</p>
+</section>
+
+@code {
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+    private const double FlashSeconds = 0.45;
+    // Lit in the code card, but left out of the live strip so the strip shows what just happened.
+    private static readonly HashSet<string> QuietKeys = new() { "bulletMove", "roaming", "attacking" };
+
+    private record CodeLine(string? Key, string Text);
+
+    private record Preset(string Key, Action<CombatTuning> Apply);
+
+    private static readonly Preset[] Presets =
+    {
+        new("presetGhost", t => SetShooter(t, speed: 6, bursts: 6, perBurst: 8, spread: 165, distance: 0.3f, between: 1, rest: 0.1f, stagger: true, oscillate: true)),
+        new("presetShotgun", t => SetShooter(t, speed: 8, bursts: 1, perBurst: 5, spread: 50, distance: 0.3f, between: 0.1f, rest: 0.8f, stagger: false, oscillate: false)),
+        new("presetRing", t => SetShooter(t, speed: 4, bursts: 3, perBurst: 24, spread: 345, distance: 0.5f, between: 0.6f, rest: 1f, stagger: false, oscillate: false)),
+        new("presetSweep", t => SetShooter(t, speed: 5, bursts: 4, perBurst: 16, spread: 300, distance: 0.3f, between: 1f, rest: 0.5f, stagger: true, oscillate: true)),
+        new("presetMachineGun", t => SetShooter(t, speed: 10, bursts: 12, perBurst: 1, spread: 0, distance: 0.3f, between: 0.12f, rest: 1f, stagger: false, oscillate: false)),
+    };
+
+    private static void SetShooter(CombatTuning t, float speed, int bursts, int perBurst, float spread, float distance,
+        float between, float rest, bool stagger, bool oscillate)
+    {
+        t.BulletMoveSpeed = speed;
+        t.BurstCount = bursts;
+        t.ProjectilesPerBurst = perBurst;
+        t.AngleSpread = spread;
+        t.StartingDistance = distance;
+        t.TimeBetweenBursts = between;
+        t.RestTime = rest;
+        t.Stagger = stagger;
+        t.Oscillate = oscillate;
+    }
+
+    private CombatSim sim = new();
+    private ElementReference canvas;
+    private ElementReference stick;
+    private ElementReference knob;
+    private ElementReference dashButton;
+    private CancellationTokenSource? loopCancel;
+    private readonly Stopwatch clock = Stopwatch.StartNew();
+    private readonly Dictionary<string, double> flashes = new();
+    private string? touchedSlider;
+    private double touchedAt;
+    private bool onValidateAsInProject = true;
+    private bool staggerForced;
+    private int dashesSeen;
+    private bool facingLeft;
+
+    protected override void OnInitialized()
+    {
+        sim.OnLine += key => flashes[key] = clock.Elapsed.TotalSeconds;
+    }
+
+    private bool Flashing(string key) =>
+        flashes.TryGetValue(key, out double at) && clock.Elapsed.TotalSeconds - at < FlashSeconds;
+
+    private bool IsLit(string? key)
+    {
+        if (key == null)
+        {
+            return false;
+        }
+        if (key == touchedSlider && clock.Elapsed.TotalSeconds - touchedAt < 1.5)
+        {
+            return true;
+        }
+
+        return key switch
+        {
+            "roaming" => sim.GhostState == CombatSim.State.Roaming,
+            "attacking" => sim.GhostState == CombatSim.State.Attacking,
+            "bulletMove" => sim.Bullets.Count > 0,
+            "move" => sim.IsMoving,
+            "knockSkip" => sim.GettingKnockedBack || sim.IsDead,
+            "validateStagger" => onValidateAsInProject && Flashing("validate"),
+            _ => Flashing(key),
+        };
+    }
+
+    private IEnumerable<CodeLine> CodeLines()
+    {
+        CombatTuning t = sim.Tuning;
+        yield return new(null, "// EnemyAI.cs");
+        yield return new("attackRange", $"[SerializeField] private float attackRange = {F(t.AttackRange)}f;");
+        yield return new("attackCooldown", $"[SerializeField] private float attackCooldown = {F(t.AttackCooldown)}f;");
+        yield return new("roaming", "case State.Roaming: Roaming(); break;");
+        yield return new("attacking", "case State.Attacking: Attacking(); break;");
+        yield return new("newRoam", "roamPosition = GetRoamingPosition();");
+        yield return new("toAttacking", "if (Vector2.Distance(...) < attackRange) { state = State.Attacking; }");
+        yield return new("toRoaming", "if (Vector2.Distance(...) > attackRange) { state = State.Roaming; }");
+        yield return new("attack", "(enemyType as IEnemy).Attack();");
+        yield return new("stopMovingWhileAttacking", t.StopMovingWhileAttacking ? "enemyPathfinding.StopMoving();" : "enemyPathfinding.MoveTo(roamPosition);");
+        yield return new("canAttack", "yield return new WaitForSeconds(attackCooldown); canAttack = true;");
+
+        yield return new(null, "// Shooter.cs");
+        yield return new("bulletMoveSpeed", $"[SerializeField] private float bulletMoveSpeed;  // {F(t.BulletMoveSpeed)}");
+        yield return new("burstCount", $"[SerializeField] private int burstCount;  // {t.BurstCount}");
+        yield return new("projectilesPerBurst", $"[SerializeField] private int projectilesPerBurst;  // {t.ProjectilesPerBurst}");
+        yield return new("angleSpread", $"[SerializeField][Range(0, 359)] private float angleSpread;  // {F(t.AngleSpread)}");
+        yield return new("startingDistance", $"[SerializeField] private float startingDistance = .1f;  // {F(t.StartingDistance)}");
+        yield return new("timeBetweenBursts", $"[SerializeField] private float timeBetweenBursts;  // {F(t.TimeBetweenBursts)}");
+        yield return new("restTime", $"[SerializeField] private float restTime = 1f;  // {F(t.RestTime)}");
+        yield return new("stagger", $"[SerializeField] private bool stagger;  // {B(t.Stagger)}");
+        yield return new("oscillate", $"[SerializeField] private bool oscillate;  // {B(t.Oscillate)}");
+        if (onValidateAsInProject)
+        {
+            yield return new("validateStagger", "if (oscillate) { stagger =true; }");
+            yield return new("validateStagger", "if (!oscillate) { stagger =true; }   // both set true");
+        }
+        yield return new("validate", "if (angleSpread == 0) { projectilesPerBurst =1; }");
+        yield return new("stillShooting", "if (!isShooting) { StartCoroutine(ShootRoutine()); }");
+        string perShot = t.Stagger ? $"  // = {F(t.TimeBetweenBursts / t.ProjectilesPerBurst)} s" : "";
+        yield return new("stagger", $"if (stagger) {{ timeBetweenProjectiles = timeBetweenBursts / projectilesPerBurst; }}{perShot}");
+        yield return new("cone", "TargetConeOfInfluence(out startAngle, out currentAngle, out angleStep, out endAngle);");
+        string step = t.AngleSpread == 0 ? "0" : t.ProjectilesPerBurst == 1 ? "Infinity" : F(t.AngleSpread / (t.ProjectilesPerBurst - 1)) + "°";
+        yield return new("cone", $"angleStep = angleSpread / (projectilesPerBurst - 1);  // = {step}");
+        yield return new("swap", "currentAngle = endAngle; endAngle = startAngle; startAngle = currentAngle; angleStep *= -1;");
+        yield return new("spawn", "Vector2 pos = FindBulletSpawnPos(currentAngle);");
+        yield return new("spawn", "GameObject newBullet = Instantiate(bulletPrefab, pos, Quaternion.identity);");
+        yield return new("spawn", "newBullet.transform.right = newBullet.transform.position - transform.position;");
+        yield return new("spawn", "currentAngle += angleStep;");
+        yield return new("waitProjectile", "if (stagger) { yield return new WaitForSeconds(timeBetweenProjectiles); }");
+        yield return new("waitBurst", "if (!stagger) { yield return new WaitForSeconds(timeBetweenBursts); }");
+        yield return new("rest", "yield return new WaitForSeconds(restTime);");
+        yield return new("doneShooting", "isShooting = false;");
+
+        yield return new(null, "// Projectile.cs");
+        yield return new("bulletMove", "transform.Translate(Vector3.right * moveSpeed * Time.deltaTime);");
+        yield return new("bulletHit", "player?.TakeDamage(1, transform); Destroy(gameObject);");
+
+        yield return new(null, "// PlayerController.cs");
+        yield return new("moveSpeed", $"[SerializeField] private float moveSpeed = 1f;  // Inspector: {F(t.MoveSpeed)}");
+        yield return new("dashSpeed", $"[SerializeField] private float dashSpeed = 4f;  // {F(t.DashSpeed)}");
+        yield return new("knockSkip", "if (knockback.GettingKnockedBack || PlayerHealth.Instance.IsDead) { return; }");
+        yield return new("move", "rb.MovePosition(rb.position + movement * (moveSpeed * Time.fixedDeltaTime));");
+        yield return new("dashRefused", "if (!isDashing && Stamina.Instance.CurrentStamina > 0)");
+        yield return new("dash", "Stamina.Instance.UseStamina(); isDashing = true; moveSpeed *= dashSpeed;");
+        yield return new("dashEnd", "moveSpeed = startingMoveSpeed;");
+
+        yield return new(null, "// PlayerHealth.cs");
+        yield return new("knockBackThrustAmount", $"[SerializeField] private float knockBackThrustAmount = {F(t.KnockBackThrustAmount)}f;");
+        yield return new("damageRecoveryTime", $"[SerializeField] private float damageRecoveryTime = {F(t.DamageRecoveryTime)}f;");
+        yield return new("ghostTouch", "private void OnCollisionStay2D(...) { if (enemy) { TakeDamage(1, other.transform); } }");
+        yield return new("blocked", "if (!canTakeDamage) { return; }");
+        yield return new("hurt", "knockback.GetKnockedBack(hitTransform, knockBackThrustAmount);");
+        yield return new("hurt", "StartCoroutine(flash.FlashRoutine()); canTakeDamage = false; currentHealth -= damageAmount;");
+        yield return new("recovered", "yield return new WaitForSeconds(damageRecoveryTime); canTakeDamage = true;");
+        yield return new("death", "IsDead = true; GetComponent<Animator>().SetTrigger(DEATH_HASH);");
+        yield return new("loadTown", "Stamina.Instance.ReplenishStaminaOnDeath(); SceneManager.LoadScene(TOWN_TEXT);");
+
+        yield return new(null, "// Knockback.cs");
+        yield return new("knockBacktime", $"[SerializeField] private float knockBacktime = {F(t.KnockBackTime)}f;");
+        yield return new("hurt", "rb.AddForce(difference, ForceMode2D.Impulse);");
+        yield return new("knockEnd", "rb.velocity = Vector2.zero; GettingKnockedBack = false;");
+
+        yield return new(null, "// Stamina.cs");
+        yield return new("timeBetweenStaminaRefresh", $"[SerializeField] private int timeBetweenStaminaRefresh = 3;  // Inspector: {t.TimeBetweenStaminaRefresh}");
+        yield return new("dash", "StopAllCoroutines(); StartCoroutine(RefreshStaminaRoutine());");
+        yield return new("staminaRefresh", "CurrentStamina++;");
+    }
+
+    private RenderFragment Slider(string name, float value, float min, float max, float step, Action<float> set) => @<label class="lab-slider">
+        <span class="lab-slider-label"><code>@name</code> = <strong>@F(value)</strong></span>
+        <input type="range" min="@F(min)" max="@F(max)" step="@F(step)" value="@value.ToString(Inv)" @oninput="e => OnSlider(e, set, name)" />
+    </label>;
+
+    private void OnSlider(ChangeEventArgs e, Action<float> set, string key)
+    {
+        if (float.TryParse(e.Value?.ToString(), NumberStyles.Float, Inv, out float value))
+        {
+            set(value);
+            Validate();
+            touchedSlider = key;
+            touchedAt = clock.Elapsed.TotalSeconds;
+        }
+    }
+
+    private void OnToggle(ChangeEventArgs e, Action<bool> set, string key)
+    {
+        set(e.Value is true);
+        staggerForced = key == "stagger" && e.Value is false && onValidateAsInProject;
+        Validate();
+        touchedSlider = key;
+        touchedAt = clock.Elapsed.TotalSeconds;
+    }
+
+    // Shooter.OnValidate runs whenever a value changes in the Inspector.
+    private void Validate()
+    {
+        bool staggerBefore = sim.Tuning.Stagger;
+        int perBurstBefore = sim.Tuning.ProjectilesPerBurst;
+        sim.Tuning.OnValidate(onValidateAsInProject);
+        if (staggerBefore != sim.Tuning.Stagger || perBurstBefore != sim.Tuning.ProjectilesPerBurst)
+        {
+            flashes["validate"] = clock.Elapsed.TotalSeconds;
+        }
+    }
+
+    private void OnValidateModeChanged(ChangeEventArgs e)
+    {
+        onValidateAsInProject = e.Value is true;
+        staggerForced = false;
+        Validate();
+    }
+
+    private void ApplyPreset(Preset preset)
+    {
+        preset.Apply(sim.Tuning);
+        bool wantedStagger = sim.Tuning.Stagger;
+        Validate();
+        staggerForced = !wantedStagger && sim.Tuning.Stagger;
+        Retry();
+    }
+
+    private void ResetValues()
+    {
+        CombatTuning defaults = new();
+        CombatTuning t = sim.Tuning;
+        t.AttackRange = defaults.AttackRange;
+        t.AttackCooldown = defaults.AttackCooldown;
+        t.StopMovingWhileAttacking = defaults.StopMovingWhileAttacking;
+        t.DashSpeed = defaults.DashSpeed;
+        t.KnockBackThrustAmount = defaults.KnockBackThrustAmount;
+        t.KnockBackTime = defaults.KnockBackTime;
+        t.DamageRecoveryTime = defaults.DamageRecoveryTime;
+        t.TimeBetweenStaminaRefresh = defaults.TimeBetweenStaminaRefresh;
+        sim.SetMoveSpeed(defaults.MoveSpeed);
+    }
+
+    private void Retry()
+    {
+        flashes.Clear();
+        sim.Reset();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("sharpDulCombat.attach", stick, knob, dashButton);
+        loopCancel = new CancellationTokenSource();
+        _ = RunLoopAsync(loopCancel.Token);
+    }
+
+    // Fixed timestep: as many 0.02 s ticks as real time has passed.
+    private async Task RunLoopAsync(CancellationToken cancel)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
+        double simulated = clock.Elapsed.TotalSeconds;
+        int frame = 0;
+        JsInput input = new();
+
+        while (await timer.WaitForNextTickAsync(cancel))
+        {
+            double now = clock.Elapsed.TotalSeconds;
+            bool dash = input.Dashes != dashesSeen;
+            dashesSeen = input.Dashes;
+            int steps = 0;
+            while (simulated + CombatSim.FixedDeltaTime <= now && steps < 5)
+            {
+                sim.Tick(input.X, input.Y, dash);
+                dash = false;
+                simulated += CombatSim.FixedDeltaTime;
+                steps++;
+            }
+            if (steps == 5)
+            {
+                simulated = now;   // the tab was asleep - do not fast-forward
+            }
+            if (input.X < -0.1f) facingLeft = true;
+            else if (input.X > 0.1f) facingLeft = false;
+
+            input = await JS.InvokeAsync<JsInput>("sharpDulCombat.frame", cancel, canvas, DrawState());
+
+            if (++frame % 4 == 0)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private object DrawState() => new
+    {
+        viewHalf = CombatSim.ViewHalf,
+        arenaHalf = CombatSim.ArenaHalf,
+        playerX = sim.PlayerX,
+        playerY = sim.PlayerY,
+        boxHalfX = CombatSim.PlayerBoxHalfX,
+        boxHalfY = CombatSim.PlayerBoxHalfY,
+        boxOffsetX = CombatSim.PlayerBoxOffsetX,
+        boxOffsetY = CombatSim.PlayerBoxOffsetY,
+        facingLeft,
+        flashing = sim.IsFlashing,
+        canTakeDamage = sim.CanTakeDamage,
+        dashing = sim.IsDashing,
+        dead = sim.IsDead,
+        health = sim.Health,
+        maxHealth = CombatSim.MaxHealth,
+        stamina = sim.CurrentStamina,
+        maxStamina = CombatSim.StartingStamina,
+        ghostX = sim.GhostX,
+        ghostY = sim.GhostY,
+        attackRange = sim.Tuning.AttackRange,
+        attacking = sim.GhostState == CombatSim.State.Attacking,
+        shooting = sim.IsShooting,
+        coneStart = sim.ConeStart,
+        coneEnd = sim.ConeEnd,
+        bulletRadius = CombatSim.BulletRadius,
+        bullets = sim.Bullets.Select(bullet => new { x = bullet.X, y = bullet.Y }),
+        stateLabel = sim.IsShooting
+            ? $"{sim.GhostState} · burst {sim.CurrentBurst}/{sim.Tuning.BurstCount}"
+            : sim.GhostState.ToString(),
+    };
+
+    private class JsInput
+    {
+        public float X { get; set; }
+        public float Y { get; set; }
+        public int Dashes { get; set; }
+    }
+
+    private static string F(float value) => value.ToString("0.##", Inv);
+
+    private static string B(bool value) => value ? "true" : "false";
+
+    public async ValueTask DisposeAsync()
+    {
+        loopCancel?.Cancel();
+        try
+        {
+            await JS.InvokeVoidAsync("sharpDulCombat.detach");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

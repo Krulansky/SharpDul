@@ -2,7 +2,7 @@
 
 Session handoff between machines and sessions. Keep it short and current.
 
-## Where we are (2026-10-27)
+## Where we are (2026-10-30)
 
 **First prototype of SharpDul Pocket** (Blazor WebAssembly PWA, .NET 10):
 
@@ -48,6 +48,15 @@ Session handoff between machines and sessions. Keep it short and current.
   (+20 XP once, `SolvedPuzzles`). Falling Frenzy: 11 puzzles, same code as the Unity course.
   Sources: `tools/build_falling_frenzy_puzzles.py`, `tools/falling_frenzy_puzzles_translations.py`.
   Verified: all 11 solved through the UI in headless Chromium, each unlocking its part.
+- **Mechanics Lab · 2D Combat** (`Pages/CombatLab.razor`, `Logic/CombatSim.cs`, `wwwroot/js/combatlab.js`,
+  2026-10-30): the Ghost fight from 2DTopDownPixelCombat. Ports EnemyAI (Roaming/Attacking),
+  Shooter (ShootRoutine as a C# iterator that yields the WaitForSeconds times), Projectile,
+  PlayerController (move + dash), PlayerHealth, Knockback, Flash and Stamina with the prefab
+  values (Ghost: 6 bursts x 8, 165°, stagger + oscillate; Player moveSpeed 4, stamina refresh 2 s).
+  Stick + Dash button (WASD / Space), sliders, pattern presets, a switch for the director's
+  OnValidate (stagger can never be off - bug), lit code lines, five "Try this" tips.
+  Verified in headless Chromium: 8 bullets over 165° never hit a player who stands still
+  (no centre bullet); with 9 the player dies and respawns.
 - Look: neutral grey placeholders. The director designs the visual identity.
 
 Verified in headless Chromium at iPhone 13 size, served under `/SharpDul/` like GitHub Pages:
