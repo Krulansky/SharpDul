@@ -1,5 +1,6 @@
 {
   "packs": [
-    "lualander-easy.json"
+    "lualander-easy.json",
+    "combat2d-easy.json"
   ]
 }

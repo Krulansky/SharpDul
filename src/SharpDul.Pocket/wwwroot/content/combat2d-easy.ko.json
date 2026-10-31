@@ -1,0 +1,194 @@
+{
+  "title": "2D Combat",
+  "description": "2D combat 코스의 Easy 문제: dash, stamina, knockback, enemy AI, bullet pattern, 그리고 내가 만든 Rage.",
+  "questions": {
+    "combat2d.dash-speed": {
+      "context": "dash 버튼을 누르면 PlayerController가 Dash()를 실행해요. Player prefab의 moveSpeed는 4예요.",
+      "prompt": "dash 중에 demon hunter는 얼마나 빨리 움직일까요?",
+      "options": [
+        "초당 16 유닛",
+        "초당 8 유닛",
+        "4 - 걸을 때와 같아요",
+        "초당 1 유닛"
+      ],
+      "hint": "*= 가 있는 줄을 보세요 - moveSpeed(4)에 dashSpeed(4)를 곱해요.",
+      "explanation": "moveSpeed *= dashSpeed 로 4 x 4 = 16이 돼요. dash가 끝나면 EndDashRoutine이 startingMoveSpeed(4)로 되돌려요."
+    },
+    "combat2d.dash-time": {
+      "context": "Dash()는 moveSpeed를 올린 직후 이 coroutine을 시작해요. isDashing이 true인 동안 Dash()는 실행되지 않아요.",
+      "prompt": "가속은 얼마나 지속되고, 언제 다시 dash할 수 있을까요?",
+      "options": [
+        "가속 0.2초, 가속이 끝나고 0.25초 뒤 다음 dash",
+        "가속 0.45초, 다음 dash는 바로",
+        "가속 0.25초, 0.2초 뒤 다음 dash",
+        "버튼을 뗄 때까지 가속"
+      ],
+      "hint": "기다림이 두 번 이어져요: 첫 번째는 가속을 끝내고, 두 번째는 isDashing을 끝내요.",
+      "explanation": "0.2초 뒤 moveSpeed가 원래대로 돌아와요. isDashing은 0.25초 더 true라서, 다음 dash는 첫 dash 시작 후 0.45초에 가능해요."
+    },
+    "combat2d.dash-no-stamina": {
+      "context": "stamina bar가 절반보다 조금 더 차 있어요: CurrentStamina = 0.6. dash를 눌러요.",
+      "prompt": "어떻게 될까요?",
+      "options": [
+        "아무 일도 없어요 - dash가 안 돼요",
+        "더 짧고 약한 dash",
+        "dash가 되고 stamina가 0 아래로 내려가요",
+        "dash가 되고 대신 health가 줄어요"
+      ],
+      "hint": "CanDash는 CurrentStamina와 dashCost를 비교해요. 0.6 >= 1 인가요?",
+      "explanation": "0.6 >= 1 은 false라서 CanDash가 false이고 if 전체를 건너뛰어요: stamina도 안 쓰고 가속도 없어요."
+    },
+    "combat2d.stamina-regen": {
+      "context": "방금 마지막 dash를 썼어요: CurrentStamina = 0. stamina globe는 줍지 않아요.",
+      "prompt": "대략 얼마 뒤에 다시 dash할 수 있을까요?",
+      "options": [
+        "약 3초",
+        "약 1/3초",
+        "한 frame",
+        "절대 안 돼요 - stamina globe만 채워요"
+      ],
+      "hint": "Time.deltaTime 덕분에 regenPerSecond는 정말 \"초당\"이에요. 1/3씩이면 dashCost 1까지 몇 초가 걸릴까요?",
+      "explanation": "1초마다 stamina가 1/3씩 늘어서, 3초 뒤 CurrentStamina가 1 = dashCost가 되고 CanDash가 다시 true가 돼요."
+    },
+    "combat2d.stamina-event": {
+      "context": "dash를 하면 UI의 stamina bar가 줄어들어요. 관련된 script 두 개예요.",
+      "prompt": "stamina bar는 stamina가 바뀐 걸 어떻게 알까요?",
+      "options": [
+        "Stamina가 OnStaminaChanged event를 발생시키고, OnEnable에서 구독한 StaminaBar가 UpdateBar를 실행해요",
+        "StaminaBar가 매 frame Update에서 Stamina.Instance를 읽어요",
+        "Stamina가 GameObject.Find로 bar를 찾아 값을 설정해요",
+        "PlayerController가 dash 후마다 bar를 갱신해요"
+      ],
+      "hint": "한 script는 Invoke를 호출하고, 다른 script는 OnEnable에서 += 를 썼어요.",
+      "explanation": "이게 Observer pattern이에요: Stamina는 bar가 있는지 몰라요. OnStaminaChanged만 발생시키고, 구독한 쪽(StaminaBar)이 반응해요. OnDisable에서 -= 로 구독을 해제해요."
+    },
+    "combat2d.damage-recovery": {
+      "context": "Ghost의 bullet에 맞았어요. 0.5초 뒤 두 번째 bullet에도 맞아요.",
+      "prompt": "두 번째 bullet은 health를 얼마나 깎을까요?",
+      "options": [
+        "0 - 아직 무적이에요",
+        "첫 번째처럼 1",
+        "2 - 데미지가 쌓여요",
+        "전부 - 죽어요"
+      ],
+      "hint": "첫 번째로 맞은 뒤 canTakeDamage는 뭐고, 언제 다시 true가 될까요?",
+      "explanation": "첫 번째 hit이 damageRecoveryTime(1초) 동안 canTakeDamage = false로 만들어요. 두 번째는 0.5초 뒤라서 TakeDamage가 첫 줄에서 return해요."
+    },
+    "combat2d.knockback-steer": {
+      "context": "slime에게 맞아서 knockback이 시작됐어요. 도망치려고 stick을 계속 누르고 있어요.",
+      "prompt": "knockback 동안 입력은 어떻게 될까요?",
+      "options": [
+        "아무 효과 없어요 - 0.2초 동안 맞은 방향으로 밀려나기만 해요",
+        "knockback 방향을 마음대로 조종해요",
+        "두 배 빨리 움직여요",
+        "knockback이 취소돼요"
+      ],
+      "hint": "Move()의 첫 줄을 보세요. knockback 동안 GettingKnockedBack은 뭘까요?",
+      "explanation": "GettingKnockedBack이 true인 동안 Move()는 MovePosition 전에 return해요. knockBacktime(0.2초) 뒤 Knockback이 velocity를 0으로 만들고 입력이 다시 동작해요."
+    },
+    "combat2d.knockback-direction": {
+      "context": "slime이 왼쪽에서 닿았어요. PlayerHealth가 slime의 transform으로 GetKnockedBack을 호출해요.",
+      "prompt": "어느 쪽으로 밀려날까요?",
+      "options": [
+        "오른쪽 - slime에서 멀어지는 쪽",
+        "왼쪽 - slime 쪽",
+        "항상 위쪽",
+        "마우스 커서 쪽"
+      ],
+      "hint": "transform.position - damageSource.position 은 slime에서 나를 향하는 화살표예요.",
+      "explanation": "내 위치에서 source의 위치를 빼면 slime에서 나를 향해요. normalize하고 thrust를 곱하면 나를 때린 것에서 멀리 밀어내요."
+    },
+    "combat2d.slime-attack-range": {
+      "context": "모든 적은 EnemyAI를 써요. Slime prefab은 attackRange = 0이에요. slime 바로 앞까지 걸어가요.",
+      "prompt": "slime이 State.Attacking으로 바뀔 때가 있을까요?",
+      "options": [
+        "아니요 - 계속 Roaming이고, 닿을 때만 데미지를 줘요",
+        "네, 닿자마자요",
+        "네, 항상 Attacking이에요",
+        "네, 2초마다요"
+      ],
+      "hint": "거리가 0보다 작을 수 있을까요?",
+      "explanation": "거리는 절대 < 0이 아니라서 slime은 Roaming에 머물러요. 그래도 데미지는 줘요: EnemyAI가 플레이어에 닿으면 PlayerHealth.OnCollisionStay2D가 TakeDamage를 호출해요."
+    },
+    "combat2d.ghost-angle-step": {
+      "context": "burst마다 Ghost의 Shooter가 나를 중심으로 bullet 원뿔을 계산해요.",
+      "prompt": "한 burst에서 이웃한 bullet 두 개는 몇 도 떨어져 있을까요?",
+      "options": [
+        "약 23.6° (165 / 7)",
+        "약 20.6° (165 / 8)",
+        "165°",
+        "82.5°"
+      ],
+      "hint": "bullet 8개 사이에는 간격이 7개예요. 코드는 (projectilesPerBurst - 1)로 나눠요.",
+      "explanation": "165° 원뿔의 한쪽 끝에서 다른 쪽 끝까지 bullet 8개면 간격이 7개예요: 165 / 7 = 23.57°. 첫 bullet은 targetAngle - 82.5°, 마지막은 targetAngle + 82.5°로 날아가요."
+    },
+    "combat2d.stagger-timing": {
+      "context": "stagger가 켜져 있으면 Ghost는 burst를 한 번에 쏘지 않고 bullet 하나씩 원뿔을 훑어요.",
+      "prompt": "새 bullet은 얼마나 자주 나올까요?",
+      "options": [
+        "0.125초마다 - 한 burst에 1초",
+        "1초마다",
+        "8초마다",
+        "8개가 동시에"
+      ],
+      "hint": "timeBetweenProjectiles = timeBetweenBursts / projectilesPerBurst. 1과 8을 넣어 보세요.",
+      "explanation": "1 / 8 = bullet 사이 0.125초라서, burst의 bullet 8개가 1초에 걸쳐 나와요 - Ghost가 훑듯이 쏘는 이유예요."
+    },
+    "combat2d.enemy-bullet-bush": {
+      "context": "Ghost의 bullet(isEnemyProjectile = true)이 덤불을 통과해요.",
+      "prompt": "참일까 거짓일까: 덤불이 부서지고 loot를 떨어뜨려요.",
+      "options": [
+        "참",
+        "거짓"
+      ],
+      "hint": "if에는 플레이어의 무기(DamageSource) 또는 적의 것이 아닌 projectile이 필요해요.",
+      "explanation": "거짓이에요. bullet은 Projectile이지만 !projectile.IsEnemyProjectile 이 false라서 조건이 안 맞고 덤불은 그대로예요. 덤불은 내 glaive, 화살, laser만 부숴요."
+    },
+    "combat2d.glaive-hits": {
+      "context": "glaive의 DamageSource가 glaive의 weaponDamage로 TakeDamage를 호출해요. slime은 startingHealth 3으로 시작해요.",
+      "prompt": "glaive로 몇 번 때려야 slime이 죽을까요?",
+      "options": [
+        "3",
+        "1",
+        "2",
+        "4"
+      ],
+      "hint": "한 번 맞을 때마다 weaponDamage(1)를 빼요. currentHealth는 언제 0이 될까요?",
+      "explanation": "3 - 1 - 1 - 1 = 0이라서 세 번째 hit에 죽어요. staff(weaponDamage 3)는 slime을 한 방에 죽여요."
+    },
+    "combat2d.singleton-duplicate": {
+      "context": "Town에서 시작해서 문을 지나 Scene_1로 가요. Scene_1은 단독으로도 시작할 수 있게 Player prefab 사본을 갖고 있어요.",
+      "prompt": "Scene_1에 놓여 있던 Player는 어떻게 될까요?",
+      "options": [
+        "스스로 파괴돼요 - Town에서 온 Player(DontDestroyOnLoad)가 계속해요",
+        "Town에서 온 Player를 대체해요",
+        "이제 Player가 두 명이에요",
+        "두 Player 모두 파괴돼요"
+      ],
+      "hint": "Scene_1의 Player가 Awake를 실행할 때 instance는 이미 설정돼 있을까요?",
+      "explanation": "Town의 Player가 이미 instance를 설정했고 scene 로드에서 살아남았어요(DontDestroyOnLoad). Scene_1의 사본은 instance != null 을 보고 스스로 파괴돼요."
+    },
+    "combat2d.area-entrance": {
+      "context": "Scene_2에는 입구가 두 개 있어요. sceneTransitionName이 \"Scene1_Exit\"인 출구로 Scene_1을 떠나요.",
+      "prompt": "참일까 거짓일까: 플레이어는 transitionName이 \"Scene1_Exit\"인 입구에 나타나요.",
+      "options": [
+        "참",
+        "거짓"
+      ],
+      "hint": "각 AreaEntrance는 자기 transitionName과 출구가 저장한 이름을 비교해요.",
+      "explanation": "참이에요. 이름이 일치하는 입구만 플레이어를 자기 위치로 옮겨요. 그래서 scene 안의 입구 이름은 고유해야 해요."
+    },
+    "combat2d.rage-gain": {
+      "context": "내가 만든 Rage 시스템이에요. Rage 0에서 시작해서, glaive 3번으로 slime을 죽이고 나는 맞지 않아요.",
+      "prompt": "지금 Rage는 얼마일까요?",
+      "options": [
+        "14",
+        "9",
+        "5",
+        "15"
+      ],
+      "hint": "hit 3번마다 RegisterEnemyHit을 호출하고, kill은 RegisterKill을 한 번 호출해요.",
+      "explanation": "hit 3번 x 3 = 9, kill 5를 더하면 14예요. 내가 맞으면 10이 더 늘어요."
+    }
+  }
+}

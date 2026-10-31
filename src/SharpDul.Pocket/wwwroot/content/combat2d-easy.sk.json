@@ -1,0 +1,194 @@
+{
+  "title": "2D Combat",
+  "description": "Easy otázky z 2D combat kurzu: dash, stamina, knockback, enemy AI, bullet patterns a tvoj vlastný Rage.",
+  "questions": {
+    "combat2d.dash-speed": {
+      "context": "PlayerController spustí Dash(), keď stlačíš dash. Na Player prefabe je moveSpeed 4.",
+      "prompt": "Ako rýchlo sa demon hunter hýbe počas dashu?",
+      "options": [
+        "16 jednotiek za sekundu",
+        "8 jednotiek za sekundu",
+        "4 - rovnako ako chôdza",
+        "1 jednotka za sekundu"
+      ],
+      "hint": "Pozri riadok s *= - násobí moveSpeed (4) hodnotou dashSpeed (4).",
+      "explanation": "moveSpeed *= dashSpeed dá 4 x 4 = 16. Na konci dashu ho EndDashRoutine vráti na startingMoveSpeed (4)."
+    },
+    "combat2d.dash-time": {
+      "context": "Dash() spustí tento coroutine hneď, ako zvýši moveSpeed. Kým je isDashing true, Dash() sa nespustí.",
+      "prompt": "Ako dlho trvá zrýchlenie a kedy môžeš dať dash znova?",
+      "options": [
+        "Zrýchlenie 0,2 s, ďalší dash 0,25 s po jeho konci",
+        "Zrýchlenie 0,45 s, ďalší dash hneď",
+        "Zrýchlenie 0,25 s, ďalší dash po 0,2 s",
+        "Zrýchlenie trvá, kým nepustíš tlačidlo"
+      ],
+      "hint": "Dve čakania za sebou: prvé ukončí zrýchlenie, druhé ukončí isDashing.",
+      "explanation": "Po 0,2 s sa moveSpeed vráti na normál. isDashing ostane true ešte 0,25 s, takže ďalší dash ide 0,45 s po začiatku prvého."
+    },
+    "combat2d.dash-no-stamina": {
+      "context": "Stamina bar máš trochu viac ako do polovice: CurrentStamina = 0,6. Stlačíš dash.",
+      "prompt": "Čo sa stane?",
+      "options": [
+        "Nič - dash sa nestane",
+        "Kratší, slabší dash",
+        "Dash sa stane a stamina klesne pod 0",
+        "Dash sa stane a namiesto staminy stojí health"
+      ],
+      "hint": "CanDash porovná CurrentStamina s dashCost. Platí 0,6 >= 1?",
+      "explanation": "0,6 >= 1 neplatí, takže CanDash je false a celý if sa preskočí: žiadna stamina sa neminie, žiadne zrýchlenie."
+    },
+    "combat2d.stamina-regen": {
+      "context": "Práve si minul posledný dash: CurrentStamina = 0. Žiadny stamina globe nezoberieš.",
+      "prompt": "Približne o koľko môžeš dať dash znova?",
+      "options": [
+        "Asi o 3 sekundy",
+        "Asi o 1/3 sekundy",
+        "O jeden frame",
+        "Nikdy - doplní ju len stamina globe"
+      ],
+      "hint": "Time.deltaTime robí z regenPerSecond naozaj \"za sekundu\". Koľko sekúnd po 1/3 treba na dashCost 1?",
+      "explanation": "Každá sekunda pridá 1/3 staminy, takže po 3 sekundách je CurrentStamina 1 = dashCost a CanDash je znova true."
+    },
+    "combat2d.stamina-event": {
+      "context": "Dáš dash a stamina bar v UI klesne. Toto sú dva skripty, ktoré sa na tom podieľajú.",
+      "prompt": "Ako sa stamina bar dozvie, že sa stamina zmenila?",
+      "options": [
+        "Stamina vystrelí event OnStaminaChanged a StaminaBar, prihlásený v OnEnable, spustí UpdateBar",
+        "StaminaBar každý frame v Update číta Stamina.Instance",
+        "Stamina nájde bar cez GameObject.Find a nastaví mu hodnotu",
+        "PlayerController po každom dashi aktualizuje bar"
+      ],
+      "hint": "Jeden skript volá Invoke, druhý napísal += v OnEnable.",
+      "explanation": "Toto je Observer pattern: Stamina nevie, že bar existuje. Len vystrelí OnStaminaChanged a kto sa prihlásil (StaminaBar), zareaguje. OnDisable sa odhlási cez -=."
+    },
+    "combat2d.damage-recovery": {
+      "context": "Zasiahne ťa guľka od Ghosta. O pol sekundy ťa zasiahne aj druhá.",
+      "prompt": "Koľko health ti zoberie druhá guľka?",
+      "options": [
+        "Nič - si stále nezraniteľný",
+        "1, ako prvá",
+        "2 - zásahy sa sčítajú",
+        "Všetko - zomrieš"
+      ],
+      "hint": "Aké je canTakeDamage po prvom zásahu a kedy bude znova true?",
+      "explanation": "Prvý zásah nastaví canTakeDamage = false na damageRecoveryTime (1 s). Druhý príde po 0,5 s, takže TakeDamage skončí hneď na prvom riadku."
+    },
+    "combat2d.knockback-steer": {
+      "context": "Zasiahne ťa slime a začne knockback. Stále držíš stick, aby si utiekol.",
+      "prompt": "Čo robí tvoj input počas knockbacku?",
+      "options": [
+        "Nič - 0,2 s len kĺžeš tam, kam ťa zásah odhodil",
+        "Knockback môžeš riadiť ľubovoľným smerom",
+        "Hýbeš sa dvakrát rýchlejšie",
+        "Knockback sa zruší"
+      ],
+      "hint": "Pozri prvý riadok Move(). Aké je GettingKnockedBack počas knockbacku?",
+      "explanation": "Kým je GettingKnockedBack true, Move() skončí pred MovePosition. Po knockBacktime (0,2 s) Knockback vynuluje velocity a input znova funguje."
+    },
+    "combat2d.knockback-direction": {
+      "context": "Slime sa ťa dotkne z ľavej strany. PlayerHealth zavolá GetKnockedBack s transformom slimu.",
+      "prompt": "Ktorým smerom ťa to odhodí?",
+      "options": [
+        "Doprava - preč od slimu",
+        "Doľava - k slimu",
+        "Vždy hore",
+        "Ku kurzoru myši"
+      ],
+      "hint": "transform.position - damageSource.position je šípka od slimu k tebe.",
+      "explanation": "Moja pozícia mínus pozícia zdroja ukazuje od slimu ku mne. Normalizované a vynásobené thrustom ma to odtlačí preč od toho, čo ma zasiahlo."
+    },
+    "combat2d.slime-attack-range": {
+      "context": "Každý nepriateľ používa EnemyAI. Slime prefab má attackRange = 0. Prídeš úplne k slimu.",
+      "prompt": "Prepne sa slime niekedy do State.Attacking?",
+      "options": [
+        "Nie - ostane v Roaming; zraní ťa len dotykom",
+        "Áno, hneď ako sa ťa dotkne",
+        "Áno, je stále v Attacking",
+        "Áno, každé 2 sekundy"
+      ],
+      "hint": "Môže byť vzdialenosť niekedy menšia ako 0?",
+      "explanation": "Vzdialenosť nikdy nie je < 0, takže slime ostane v Roaming. Aj tak ťa zraní: PlayerHealth.OnCollisionStay2D zavolá TakeDamage, keď sa hráča dotkne EnemyAI."
+    },
+    "combat2d.ghost-angle-step": {
+      "context": "Pred každým burstom si Shooter Ghosta vypočíta kužeľ guliek okolo teba.",
+      "prompt": "O koľko stupňov sú od seba dve susedné guľky v jednom burste?",
+      "options": [
+        "Asi 23,6° (165 / 7)",
+        "Asi 20,6° (165 / 8)",
+        "165°",
+        "82,5°"
+      ],
+      "hint": "8 guliek má medzi sebou 7 medzier. Kód delí (projectilesPerBurst - 1).",
+      "explanation": "8 guliek od jedného okraja 165° kužeľa po druhý necháva 7 medzier: 165 / 7 = 23,57°. Prvá letí na targetAngle - 82,5°, posledná na targetAngle + 82,5°."
+    },
+    "combat2d.stagger-timing": {
+      "context": "So zapnutým stagger Ghost nevystrelí celý burst naraz - prejde kužeľ guľku po guľke.",
+      "prompt": "Ako často vyletí nová guľka?",
+      "options": [
+        "Každých 0,125 s - jeden burst trvá 1 s",
+        "Každú 1 s",
+        "Každých 8 s",
+        "Všetkých 8 v tej istej chvíli"
+      ],
+      "hint": "timeBetweenProjectiles = timeBetweenBursts / projectilesPerBurst. Dosaď 1 a 8.",
+      "explanation": "1 / 8 = 0,125 s medzi guľkami, takže 8 guliek burstu sa rozloží na 1 sekundu - preto ten zametací pohyb Ghosta."
+    },
+    "combat2d.enemy-bullet-bush": {
+      "context": "Guľka od Ghosta (isEnemyProjectile = true) preletí cez ker.",
+      "prompt": "Pravda alebo nepravda: ker sa rozbije a pustí loot.",
+      "options": [
+        "Pravda",
+        "Nepravda"
+      ],
+      "hint": "if potrebuje zbraň hráča (DamageSource) alebo projektil, ktorý NIE JE nepriateľský.",
+      "explanation": "Nepravda. Guľka je Projectile, ale !projectile.IsEnemyProjectile je false, takže podmienka neplatí a ker ostane. Kríky rozbije len tvoj glaive, šípy a laser."
+    },
+    "combat2d.glaive-hits": {
+      "context": "DamageSource na tvojom glaive zavolá TakeDamage s weaponDamage glaivu. Slime začína so startingHealth 3.",
+      "prompt": "Koľko zásahov glaivom treba na zabitie slimu?",
+      "options": [
+        "3",
+        "1",
+        "2",
+        "4"
+      ],
+      "hint": "Každý zásah odpočíta weaponDamage (1). Kedy currentHealth dosiahne 0?",
+      "explanation": "3 - 1 - 1 - 1 = 0, takže ho zabije tretí zásah. Staff (weaponDamage 3) zabije slime jedným zásahom."
+    },
+    "combat2d.singleton-duplicate": {
+      "context": "Začneš v Town a prejdeš bránou do Scene_1. Scene_1 má vlastnú kópiu Player prefabu, aby sa dala spustiť aj samostatne.",
+      "prompt": "Čo sa stane s Playerom, ktorý bol položený v Scene_1?",
+      "options": [
+        "Zničí sám seba - Player z Town (DontDestroyOnLoad) pokračuje",
+        "Nahradí Playera z Town",
+        "Teraz sú tam dvaja Playeri",
+        "Zničia sa obaja"
+      ],
+      "hint": "Keď Player zo Scene_1 spustí Awake, je instance už nastavená?",
+      "explanation": "Player z Town už nastavil instance a prežil načítanie scény (DontDestroyOnLoad). Kópia zo Scene_1 zistí, že instance != null, a zničí sa."
+    },
+    "combat2d.area-entrance": {
+      "context": "Scene_2 má dva vstupy. Odídeš zo Scene_1 východom, ktorého sceneTransitionName je \"Scene1_Exit\".",
+      "prompt": "Pravda alebo nepravda: hráč sa objaví pri vstupe, ktorého transitionName je \"Scene1_Exit\".",
+      "options": [
+        "Pravda",
+        "Nepravda"
+      ],
+      "hint": "Každý AreaEntrance porovná svoje transitionName s menom, ktoré uložil východ.",
+      "explanation": "Pravda. Hráča k sebe presunie len vstup so zhodným menom. Preto musia byť mená vstupov v scéne unikátne."
+    },
+    "combat2d.rage-gain": {
+      "context": "Tvoj vlastný Rage systém. Začneš s 0 Rage, zabiješ slime tromi zásahmi glaivom a sám zásah nedostaneš.",
+      "prompt": "Koľko Rage máš teraz?",
+      "options": [
+        "14",
+        "9",
+        "5",
+        "15"
+      ],
+      "hint": "Každý z 3 zásahov zavolá RegisterEnemyHit a zabitie raz zavolá RegisterKill.",
+      "explanation": "3 zásahy x 3 = 9, plus 5 za zabitie = 14. Keby ťa niečo zasiahlo, pribudlo by ešte 10."
+    }
+  }
+}

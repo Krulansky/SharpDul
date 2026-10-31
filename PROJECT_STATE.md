@@ -57,6 +57,13 @@ Session handoff between machines and sessions. Keep it short and current.
   OnValidate (stagger can never be off - bug), lit code lines, five "Try this" tips.
   Verified in headless Chromium: 8 bullets over 165° never hit a player who stands still
   (no centre bullet); with 9 the player dies and respawns.
+- **Quiz pack `combat2d-easy`** (2026-10-31): 16 Easy questions from 2DTopDownPixelCombat
+  (dash, stamina + its event, damage recovery, knockback, EnemyAI, Shooter maths, Destructible,
+  Singleton, scene transitions, the director's own Rage). Built by `tools/build_combat2d_pack.py`
+  from the project on disk: source lines are found by anchor text, EN/SK/KR in one file.
+  Verified: all 16 answered right through the UI in EN, SK and KR.
+  Note: the 2D Combat Lab still has the course's Stamina (3 orbs, refill every 2 s); the project
+  now regenerates 1/3 per second with an OnStaminaChanged event.
 - Look: neutral grey placeholders. The director designs the visual identity.
 
 Verified in headless Chromium at iPhone 13 size, served under `/SharpDul/` like GitHub Pages:
