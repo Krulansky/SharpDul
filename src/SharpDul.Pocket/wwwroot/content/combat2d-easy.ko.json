@@ -179,7 +179,7 @@
       "explanation": "참이에요. 이름이 일치하는 입구만 플레이어를 자기 위치로 옮겨요. 그래서 scene 안의 입구 이름은 고유해야 해요."
     },
     "combat2d.rage-gain": {
-      "context": "내가 만든 Rage 시스템이에요. Rage 0에서 시작해서, glaive 3번으로 slime을 죽이고 나는 맞지 않아요.",
+      "context": "내가 만든 Rage 시스템이에요. Rage 0에서 시작해서 glaive 3번으로 slime을 빠르게 죽여요 (그래서 전투 밖 감소는 아직 없어요). 나는 맞지 않아요.",
       "prompt": "지금 Rage는 얼마일까요?",
       "options": [
         "14",
@@ -188,7 +188,7 @@
         "15"
       ],
       "hint": "hit 3번마다 RegisterEnemyHit을 호출하고, kill은 RegisterKill을 한 번 호출해요.",
-      "explanation": "hit 3번 x 3 = 9, kill 5를 더하면 14예요. 내가 맞으면 10이 더 늘어요."
+      "explanation": "hit 3번 x 3 = 9, kill 5를 더하면 14예요. slowGainThreshold(50)보다 한참 아래라 절반으로 줄지 않아요. 내가 맞으면 10이 더 늘어요."
     }
   }
 }

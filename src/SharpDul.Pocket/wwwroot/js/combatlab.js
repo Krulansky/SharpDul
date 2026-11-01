@@ -185,17 +185,21 @@ window.sharpDulCombat = (function () {
             ctx.fill();
         }
 
-        // HUD: health and stamina orbs.
+        // HUD: health and stamina.
         const unit = Math.max(10, Math.round(h * 0.035));
         for (let i = 0; i < s.maxHealth; i++) {
             ctx.fillStyle = i < s.health ? "#ef4444" : "rgba(0,0,0,0.4)";
             ctx.fillRect(10 + i * (unit + 4), 10, unit, unit);
         }
-        for (let i = 0; i < s.maxStamina; i++) {
-            ctx.fillStyle = i < s.stamina ? "#4ade80" : "rgba(0,0,0,0.4)";
-            ctx.beginPath();
-            ctx.arc(10 + unit / 2 + i * (unit + 4), 14 + unit * 1.5, unit / 2, 0, Math.PI * 2);
-            ctx.fill();
+        // Stamina bar (StaminaBar), with a tick at every dashCost.
+        const barW = unit * 3 + 8, barY = 14 + unit;
+        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.fillRect(10, barY, barW, unit * 0.6);
+        ctx.fillStyle = s.stamina >= s.dashCost ? "#4ade80" : "#a3a3a3";
+        ctx.fillRect(10, barY, barW * Math.min(1, s.stamina / s.maxStamina), unit * 0.6);
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        for (let c = s.dashCost; c < s.maxStamina - 0.001; c += s.dashCost) {
+            ctx.fillRect(10 + barW * c / s.maxStamina - 1, barY, 2, unit * 0.6);
         }
         ctx.fillStyle = "#fafafa";
         ctx.font = "600 " + Math.round(unit * 1.1) + "px system-ui, sans-serif";

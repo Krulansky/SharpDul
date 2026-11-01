@@ -226,10 +226,12 @@ private void OnEnable()
 public void TakeDamage(int damageAmount, Transform hitTransform)
 {
     if (!canTakeDamage) { return; }
-    knockback.GetKnockedBack(hitTransform, knockBackThrustAmount);
+
     canTakeDamage = false;
-    currentHealth -= damageAmount;
     StartCoroutine(DamageRecoveryRoutine());
+
+    knockback.GetKnockedBack(hitTransform, knockBackThrustAmount);
+    currentHealth -= damageAmount;
 }
 
 private IEnumerator DamageRecoveryRoutine()
@@ -237,7 +239,7 @@ private IEnumerator DamageRecoveryRoutine()
     yield return new WaitForSeconds(damageRecoveryTime);
     canTakeDamage = true;
 }""",
-        "highlight": [1, 5, 7, 15],
+        "highlight": [1, 5, 7, 16],
         "source": ("Assets/Scripts/Player/PlayerHealth.cs", "public void TakeDamage(", "canTakeDamage = true;"),
         "en": {
             "context": "A Ghost bullet hits you. Half a second later a second bullet hits you too.",
@@ -450,8 +452,7 @@ private void OnTriggerEnter2D(Collider2D other)
 
     if (other.gameObject.GetComponent<DamageSource>() || (projectile && !projectile.IsEnemyProjectile))
     {
-        pickUpSpawner?.DropItems();
-        Destroy(gameObject);
+        Break();   // DropItems, VFX, Destroy
     }
 }""",
         "highlight": [6],
@@ -612,9 +613,10 @@ void Start()
         "id": "combat2d.rage-gain",
         "type": "MultipleChoice",
         "code": """// Rage.cs (Player prefab values)
-[SerializeField] private int ragePerEnemyHit = 3;
-[SerializeField] private int ragePerKill = 5;
-[SerializeField] private int ragePerDamageTaken = 10;
+[SerializeField] private float ragePerEnemyHit = 3f;
+[SerializeField] private float ragePerKill = 5f;
+[SerializeField] private float ragePerDamageTaken = 10f;
+[SerializeField] private float slowGainThreshold = 50f;   // above it gains are halved
 
 // DamageSource.cs - every glaive hit on an enemy:
 enemyHealth.TakeDamage(damageAmount);
@@ -622,28 +624,28 @@ Rage.Instance.RegisterEnemyHit();
 
 // EnemyHealth.cs - when the enemy dies:
 Rage.Instance.RegisterKill();""",
-        "highlight": [2, 3, 8, 11],
-        "source": ("Assets/Scripts/Player/Rage.cs", "[SerializeField] private int ragePerEnemyHit", "[SerializeField] private int ragePerDamageTaken"),
+        "highlight": [2, 3, 9, 12],
+        "source": ("Assets/Scripts/Player/Rage.cs", "[SerializeField] private float ragePerEnemyHit", "[SerializeField] private float slowGainThreshold"),
         "en": {
-            "context": "Your own Rage system. You start with 0 Rage, kill a slime with 3 glaive hits and do not get hit yourself.",
+            "context": "Your own Rage system. You start with 0 Rage and quickly kill a slime with 3 glaive hits (so no out-of-combat decay yet). You do not get hit yourself.",
             "prompt": "How much Rage do you have now?",
             "hint": "Each of the 3 hits calls RegisterEnemyHit, and the kill calls RegisterKill once.",
             "options": ["14", "9", "5", "15"],
-            "explanation": "3 hits x 3 = 9, plus 5 for the kill = 14. Getting hit yourself would add 10 more.",
+            "explanation": "3 hits x 3 = 9, plus 5 for the kill = 14. You are far below slowGainThreshold (50), so nothing is halved. Getting hit yourself would add 10 more.",
         },
         "sk": {
-            "context": "Tvoj vlastný Rage systém. Začneš s 0 Rage, zabiješ slime tromi zásahmi glaivom a sám zásah nedostaneš.",
+            "context": "Tvoj vlastný Rage systém. Začneš s 0 Rage a rýchlo zabiješ slime tromi zásahmi glaivom (takže Rage ešte neubúda mimo boja). Sám zásah nedostaneš.",
             "prompt": "Koľko Rage máš teraz?",
             "hint": "Každý z 3 zásahov zavolá RegisterEnemyHit a zabitie raz zavolá RegisterKill.",
             "options": ["14", "9", "5", "15"],
-            "explanation": "3 zásahy x 3 = 9, plus 5 za zabitie = 14. Keby ťa niečo zasiahlo, pribudlo by ešte 10.",
+            "explanation": "3 zásahy x 3 = 9, plus 5 za zabitie = 14. Si hlboko pod slowGainThreshold (50), takže sa nič nepolovičí. Keby ťa niečo zasiahlo, pribudlo by ešte 10.",
         },
         "ko": {
-            "context": "내가 만든 Rage 시스템이에요. Rage 0에서 시작해서, glaive 3번으로 slime을 죽이고 나는 맞지 않아요.",
+            "context": "내가 만든 Rage 시스템이에요. Rage 0에서 시작해서 glaive 3번으로 slime을 빠르게 죽여요 (그래서 전투 밖 감소는 아직 없어요). 나는 맞지 않아요.",
             "prompt": "지금 Rage는 얼마일까요?",
             "hint": "hit 3번마다 RegisterEnemyHit을 호출하고, kill은 RegisterKill을 한 번 호출해요.",
             "options": ["14", "9", "5", "15"],
-            "explanation": "hit 3번 x 3 = 9, kill 5를 더하면 14예요. 내가 맞으면 10이 더 늘어요.",
+            "explanation": "hit 3번 x 3 = 9, kill 5를 더하면 14예요. slowGainThreshold(50)보다 한참 아래라 절반으로 줄지 않아요. 내가 맞으면 10이 더 늘어요.",
         },
     },
 ]

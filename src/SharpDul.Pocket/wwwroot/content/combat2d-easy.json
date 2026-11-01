@@ -151,12 +151,12 @@
       "type": "MultipleChoice",
       "context": "A Ghost bullet hits you. Half a second later a second bullet hits you too.",
       "prompt": "How much health does the second bullet take?",
-      "code": "[SerializeField] private float damageRecoveryTime = 1f;\n\npublic void TakeDamage(int damageAmount, Transform hitTransform)\n{\n    if (!canTakeDamage) { return; }\n    knockback.GetKnockedBack(hitTransform, knockBackThrustAmount);\n    canTakeDamage = false;\n    currentHealth -= damageAmount;\n    StartCoroutine(DamageRecoveryRoutine());\n}\n\nprivate IEnumerator DamageRecoveryRoutine()\n{\n    yield return new WaitForSeconds(damageRecoveryTime);\n    canTakeDamage = true;\n}",
+      "code": "[SerializeField] private float damageRecoveryTime = 1f;\n\npublic void TakeDamage(int damageAmount, Transform hitTransform)\n{\n    if (!canTakeDamage) { return; }\n\n    canTakeDamage = false;\n    StartCoroutine(DamageRecoveryRoutine());\n\n    knockback.GetKnockedBack(hitTransform, knockBackThrustAmount);\n    currentHealth -= damageAmount;\n}\n\nprivate IEnumerator DamageRecoveryRoutine()\n{\n    yield return new WaitForSeconds(damageRecoveryTime);\n    canTakeDamage = true;\n}",
       "highlight": [
         1,
         5,
         7,
-        15
+        16
       ],
       "hint": "What is canTakeDamage after the first hit, and when does it become true again?",
       "options": [
@@ -171,7 +171,7 @@
         "project": "2DTopDownPixelCombat",
         "file": "Assets/Scripts/Player/PlayerHealth.cs",
         "lineStart": 61,
-        "lineEnd": 98
+        "lineEnd": 102
       }
     },
     {
@@ -317,7 +317,7 @@
       "type": "TrueFalse",
       "context": "A Ghost bullet (isEnemyProjectile = true) flies through a bush.",
       "prompt": "True or false: the bush breaks and drops loot.",
-      "code": "// Destructible.cs (bushes)\nprivate void OnTriggerEnter2D(Collider2D other)\n{\n    Projectile projectile = other.gameObject.GetComponent<Projectile>();\n\n    if (other.gameObject.GetComponent<DamageSource>() || (projectile && !projectile.IsEnemyProjectile))\n    {\n        pickUpSpawner?.DropItems();\n        Destroy(gameObject);\n    }\n}",
+      "code": "// Destructible.cs (bushes)\nprivate void OnTriggerEnter2D(Collider2D other)\n{\n    Projectile projectile = other.gameObject.GetComponent<Projectile>();\n\n    if (other.gameObject.GetComponent<DamageSource>() || (projectile && !projectile.IsEnemyProjectile))\n    {\n        Break();   // DropItems, VFX, Destroy\n    }\n}",
       "highlight": [
         6
       ],
@@ -332,7 +332,7 @@
         "project": "2DTopDownPixelCombat",
         "file": "Assets/Scripts/Misc/Destructible.cs",
         "lineStart": 9,
-        "lineEnd": 18
+        "lineEnd": 24
       }
     },
     {
@@ -423,14 +423,14 @@
       "id": "combat2d.rage-gain",
       "difficulty": "Easy",
       "type": "MultipleChoice",
-      "context": "Your own Rage system. You start with 0 Rage, kill a slime with 3 glaive hits and do not get hit yourself.",
+      "context": "Your own Rage system. You start with 0 Rage and quickly kill a slime with 3 glaive hits (so no out-of-combat decay yet). You do not get hit yourself.",
       "prompt": "How much Rage do you have now?",
-      "code": "// Rage.cs (Player prefab values)\n[SerializeField] private int ragePerEnemyHit = 3;\n[SerializeField] private int ragePerKill = 5;\n[SerializeField] private int ragePerDamageTaken = 10;\n\n// DamageSource.cs - every glaive hit on an enemy:\nenemyHealth.TakeDamage(damageAmount);\nRage.Instance.RegisterEnemyHit();\n\n// EnemyHealth.cs - when the enemy dies:\nRage.Instance.RegisterKill();",
+      "code": "// Rage.cs (Player prefab values)\n[SerializeField] private float ragePerEnemyHit = 3f;\n[SerializeField] private float ragePerKill = 5f;\n[SerializeField] private float ragePerDamageTaken = 10f;\n[SerializeField] private float slowGainThreshold = 50f;   // above it gains are halved\n\n// DamageSource.cs - every glaive hit on an enemy:\nenemyHealth.TakeDamage(damageAmount);\nRage.Instance.RegisterEnemyHit();\n\n// EnemyHealth.cs - when the enemy dies:\nRage.Instance.RegisterKill();",
       "highlight": [
         2,
         3,
-        8,
-        11
+        9,
+        12
       ],
       "hint": "Each of the 3 hits calls RegisterEnemyHit, and the kill calls RegisterKill once.",
       "options": [
@@ -440,12 +440,12 @@
         "15"
       ],
       "answerIndex": 0,
-      "explanation": "3 hits x 3 = 9, plus 5 for the kill = 14. Getting hit yourself would add 10 more.",
+      "explanation": "3 hits x 3 = 9, plus 5 for the kill = 14. You are far below slowGainThreshold (50), so nothing is halved. Getting hit yourself would add 10 more.",
       "source": {
         "project": "2DTopDownPixelCombat",
         "file": "Assets/Scripts/Player/Rage.cs",
         "lineStart": 11,
-        "lineEnd": 13
+        "lineEnd": 16
       }
     }
   ]

@@ -179,7 +179,7 @@
       "explanation": "Pravda. Hráča k sebe presunie len vstup so zhodným menom. Preto musia byť mená vstupov v scéne unikátne."
     },
     "combat2d.rage-gain": {
-      "context": "Tvoj vlastný Rage systém. Začneš s 0 Rage, zabiješ slime tromi zásahmi glaivom a sám zásah nedostaneš.",
+      "context": "Tvoj vlastný Rage systém. Začneš s 0 Rage a rýchlo zabiješ slime tromi zásahmi glaivom (takže Rage ešte neubúda mimo boja). Sám zásah nedostaneš.",
       "prompt": "Koľko Rage máš teraz?",
       "options": [
         "14",
@@ -188,7 +188,7 @@
         "15"
       ],
       "hint": "Každý z 3 zásahov zavolá RegisterEnemyHit a zabitie raz zavolá RegisterKill.",
-      "explanation": "3 zásahy x 3 = 9, plus 5 za zabitie = 14. Keby ťa niečo zasiahlo, pribudlo by ešte 10."
+      "explanation": "3 zásahy x 3 = 9, plus 5 za zabitie = 14. Si hlboko pod slowGainThreshold (50), takže sa nič nepolovičí. Keby ťa niečo zasiahlo, pribudlo by ešte 10."
     }
   }
 }

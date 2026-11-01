@@ -27,7 +27,9 @@ public class CombatTuning
     public float KnockBackThrustAmount = 10f;
     public float KnockBackTime = 0.2f;
     public float DamageRecoveryTime = 1f;
-    public int TimeBetweenStaminaRefresh = 2;
+    public float MaxStamina = 3f;
+    public float DashCost = 1f;
+    public float RegenPerSecond = 1f / 3f;
 
     /// <summary>
     /// Shooter.OnValidate. With <paramref name="asInProject"/> it is the director's version,
@@ -68,7 +70,6 @@ public class CombatSim
     public const float RoamChangeDirFloat = 2f;      // EnemyAI.roamChangeDirFloat
     public const float FlashTime = 0.2f;             // Player Flash.restoreDefaultMatTime
     public const int MaxHealth = 3;
-    public const int StartingStamina = 3;
     public const float DashTime = 0.2f;
     public const float DashCooldown = 0.25f;
     public const float DeathLoadTime = 2f;
@@ -109,7 +110,8 @@ public class CombatSim
     public float PlayerX { get; private set; }
     public float PlayerY { get; private set; }
     public int Health { get; private set; }
-    public int CurrentStamina { get; private set; }
+    public float CurrentStamina { get; private set; }
+    public bool CanDash => CurrentStamina >= Tuning.DashCost;
     public bool IsDead { get; private set; }
     public bool IsDashing { get; private set; }
     public bool IsFlashing { get; private set; }
@@ -153,7 +155,7 @@ public class CombatSim
         PlayerY = PlayerStartY;
         velocityX = velocityY = 0f;
         Health = MaxHealth;
-        CurrentStamina = StartingStamina;
+        CurrentStamina = Tuning.MaxStamina;   // Stamina.Awake / ReplenishStaminaOnDeath
         IsDead = IsDashing = IsFlashing = GettingKnockedBack = false;
         CanTakeDamage = true;
         startingMoveSpeed = moveSpeed = Tuning.MoveSpeed;
@@ -187,6 +189,7 @@ public class CombatSim
         }
 
         EnemyAIUpdate();
+        StaminaUpdate();
         RunRoutines();
         GhostFixedUpdate();
         PlayerFixedUpdate(moveX, moveY);
@@ -495,7 +498,7 @@ public class CombatSim
 
     private void Dash()
     {
-        if (!IsDashing && CurrentStamina > 0)
+        if (!IsDashing && CanDash)
         {
             UseStamina();
             IsDashing = true;
@@ -520,24 +523,29 @@ public class CombatSim
 
     // ---------- Stamina ----------
 
-    private void UseStamina()
+    /// <summary>Stamina.Update: fills up continuously, 1/3 per second on the Player prefab.</summary>
+    private void StaminaUpdate()
     {
-        CurrentStamina--;
-        StopAllCoroutines("Stamina");
-        StartCoroutine(RefreshStaminaRoutine(), "Stamina");
-    }
-
-    private IEnumerator<float> RefreshStaminaRoutine()
-    {
-        while (true)
+        if (CurrentStamina < Tuning.MaxStamina && !IsDead)
         {
-            yield return Tuning.TimeBetweenStaminaRefresh;
-            if (CurrentStamina < StartingStamina && !IsDead)
+            bool couldDash = CanDash;
+            SetStamina(CurrentStamina + Tuning.RegenPerSecond * FixedDeltaTime);
+            if (!couldDash && CanDash)
             {
-                CurrentStamina++;
-                OnLine?.Invoke("staminaRefresh");
+                OnLine?.Invoke("canDashAgain");
             }
         }
+    }
+
+    private void UseStamina()
+    {
+        SetStamina(CurrentStamina - Tuning.DashCost);
+    }
+
+    private void SetStamina(float value)
+    {
+        CurrentStamina = Math.Clamp(value, 0f, Tuning.MaxStamina);
+        // OnStaminaChanged?.Invoke(CurrentStamina, maxStamina) - the Lab's HUD reads CurrentStamina instead.
     }
 
     // ---------- PlayerHealth + Knockback + Flash ----------

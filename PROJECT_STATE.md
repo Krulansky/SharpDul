@@ -52,7 +52,7 @@ Session handoff between machines and sessions. Keep it short and current.
   2026-10-30): the Ghost fight from 2DTopDownPixelCombat. Ports EnemyAI (Roaming/Attacking),
   Shooter (ShootRoutine as a C# iterator that yields the WaitForSeconds times), Projectile,
   PlayerController (move + dash), PlayerHealth, Knockback, Flash and Stamina with the prefab
-  values (Ghost: 6 bursts x 8, 165°, stagger + oscillate; Player moveSpeed 4, stamina refresh 2 s).
+  values (Ghost: 6 bursts x 8, 165°, stagger + oscillate; Player moveSpeed 4).
   Stick + Dash button (WASD / Space), sliders, pattern presets, a switch for the director's
   OnValidate (stagger can never be off - bug), lit code lines, five "Try this" tips.
   Verified in headless Chromium: 8 bullets over 165° never hit a player who stands still
@@ -62,8 +62,9 @@ Session handoff between machines and sessions. Keep it short and current.
   Singleton, scene transitions, the director's own Rage). Built by `tools/build_combat2d_pack.py`
   from the project on disk: source lines are found by anchor text, EN/SK/KR in one file.
   Verified: all 16 answered right through the UI in EN, SK and KR.
-  Note: the 2D Combat Lab still has the course's Stamina (3 orbs, refill every 2 s); the project
-  now regenerates 1/3 per second with an OnStaminaChanged event.
+  2026-11-01: the Lab now uses the project's current Stamina (float, CanDash, regenPerSecond 1/3
+  in Update, a bar instead of orbs) and PlayerHealth's new order (canTakeDamage first); three
+  quiz snippets follow the newer PlayerHealth, Destructible.Break and float Rage.
 - Look: neutral grey placeholders. The director designs the visual identity.
 
 Verified in headless Chromium at iPhone 13 size, served under `/SharpDul/` like GitHub Pages:
