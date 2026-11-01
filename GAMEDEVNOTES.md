@@ -540,3 +540,54 @@ keeps only what carries over to any Unity project.
   timestamp changed (Unity re-saved identical content). Discard it; `git status` clears it.
 - **Commit before an experiment.** A saved-over prefab came back in one command
   (`git restore <file>`) only because the last commit had it.
+
+### After the course: resources, bars and abilities (2026-10-31 to 2026-11-01)
+
+The director's own Rage/Fel systems in 2DTopDownPixelCombat (map in
+`knowledge/2d-topdown-pixel-combat.md`). What carries over:
+
+- **Static events when the source is recreated but the listener survives.** The Player is
+  destroyed on death and a fresh one loads with the next scene; the UI persists. An instance
+  event would leave the bar listening to a dead object; a `static event` is subscribed once and
+  hears every new Player. The source broadcasts its starting value in `Start`, so the bar is
+  right after a respawn.
+- **A listener that turns itself off must not use `SetActive(false)`.** That runs `OnDisable`,
+  which unsubscribes, and nothing ever turns it back on. Hide the visual (`Image.enabled`) and
+  keep the object alive.
+- **Ease bars with `Lerp(current, target, 1 - Exp(-speed * dt))` in `Update`, not a tween.** It
+  is frame-rate independent and copes with a value that changes every frame (regen); a tween
+  restarted 60 times a second never finishes, and a delayed "ghost" bar never moves.
+- **A Slider with Whole Numbers on snaps to integers** - no amount of easing code will show.
+- **Unity 2022.3: Shader Graph materials do not work on UI Images.** They ignore the Image
+  colour and transparency and draw coloured or black squares. UI Shader Graph arrived in
+  2023.2; in 2022.3 UI Images use Material None. Materials copied from world sprites sneak in.
+- **An absorbed hit still needs the invulnerability window.** Contact damage runs every physics
+  step, so a shield with 3 charges lost all three in 3 frames until the absorb also started
+  the recovery timer.
+- **Per-target hit cooldowns for auras and channels:** a `Dictionary<target, nextHitTime>`
+  gives "hit on contact, then every X seconds per target". A global tick (everyone every
+  second) feels like up to a second of lag on contact. Check the area every frame with
+  `OverlapCircleNonAlloc` into one reused buffer - `OverlapCircleAll` allocates a new array
+  every call.
+- **Composition beat a bespoke script:** one `AuraDamage` component ("hurt enemies around me
+  while enabled") serves a fire shield, a spinning-blade ability and melee claws. Name
+  components for what they do, not where they are used.
+- **A class must list an interface, not just have its methods.** `Bow` had
+  `StartRageAbility()` but not `IRageWeapon` in its declaration; `as IRageWeapon` returned null
+  and nothing complained. Interfaces (any number per class, "what it can do") are not
+  singletons (one base class, "which object").
+- **Resource economy against infinite loops** (a spender that refills itself on hits):
+  1. no gain while spending, 2. slower gain above a threshold, so the top half must be fought
+  for, 3. decay out of combat, so it cannot be banked. Before attributing a gain to "the
+  glaive", check every prefab that carries the rewarding component - arrows carried
+  `DamageSource` too and fed the loop.
+- **Hold-a-number-key abilities do not work with WASD movement.** The left hand cannot hold 1
+  and steer. Hold the right mouse button instead; switching weapon ends the ability and a new
+  press is required (seamless swapping felt like cheating).
+- **Simple, readable mitigation beats clever bookkeeping.** "First hit from each enemy is
+  absorbed" needed every projectile and splatter to carry its shooter; "absorbs 3 hits from
+  anyone" needs one integer and the player can see it. (Passing an owner reference is cheap -
+  the reason to drop it was design clarity, not performance.)
+- **UI size advice needs the real numbers.** "Make the frame a bit bigger than the slot" failed:
+  the slot was a 135 px grid cell, the frame 105 px, so it hid completely behind it. Read the
+  layout (cell size, sibling order: later siblings draw on top) before suggesting sizes.
