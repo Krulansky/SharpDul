@@ -5,9 +5,10 @@ GameDev.tv course **Unity 2D RPG: Complete Combat System** (87 lectures), finish
 (commit `a040944` "KURZ HOTOVY!"). Unity `2022.3.62f2`, URP 2D Renderer, new Input System.
 The hero is the director's own Illidan-style demon hunter with a warglaive and green fel fire.
 
-This file is an English copy of the director's `COURSE_NOTES.md` (written on the PC, not in
-the repo), plus a section on the design patterns the code already uses. General lessons from
-the course belong in `GAMEDEVNOTES.md` in this repo.
+This file is an English copy of the director's `COURSE_NOTES.md` (Slovak, in the project repo),
+plus the director's own systems built after the course and a section on the design patterns the
+code uses. The project's plans live in its own `ROADMAP.md` and `HANDOVER.md`. General lessons
+belong in `GAMEDEVNOTES.md` in this repo.
 
 ---
 
@@ -91,7 +92,7 @@ the course belong in `GAMEDEVNOTES.md` in this repo.
 ## Scenes (Build Settings)
 
 `Town` (0, start and respawn after death), `Scene_1`, `Scene_2`, `Scene_3`. The state of the
-gates is in `HANDOVER.md` on the director's PC.
+gates is in the project's `HANDOVER.md`.
 
 ## Known quirks
 
@@ -100,12 +101,33 @@ gates is in `HANDOVER.md` on the director's PC.
 - `Shooter`: with an even `projectilesPerBurst` the cone has no bullet in its centre - the Ghost's
   8 over 165° never hit a player who stands still. `projectilesPerBurst = 1` with `angleSpread > 0`
   divides by zero (`angleStep` = Infinity) and the one bullet flies along the cone's edge.
-- `Stamina.timeBetweenStaminaRefresh` is 3 in the script but **2** on the Player prefab.
-
 - After death Town loads, but `SceneManagement` remembers the last transition name. If it
   matches an entrance in Town, the player respawns at that gate instead of the start.
-- `Player Controls.cs` is not next to its `.inputactions`; when the inputs change, Unity
-  generates it again and the class exists twice.
+- `Player Controls.cs` lives in `Scripts/Player`, not next to its `.inputactions`. The importer's
+  `wrapperCodePath` points there, so regenerating writes the same file (checked 2026-11-01 when
+  the Abilities map was added).
+
+---
+
+## Own systems after the course (2026-10-31 to 2026-11-01)
+
+Design and status: the project's `ROADMAP.md` ("Rage + Fel a Demon forma"). All new scripts are
+added beside the course code, not inside it.
+
+| Script | On | What it does |
+|---|---|---|
+| `Fel` | Player | Fel 0-100, static event `OnFelChanged`, `AddFel`, `TrySpendFel`. A FelFire Globe adds 10. |
+| `Rage` | Player | Rage 0-100 (`float`), static event `OnRageChanged`. Gains: weapon hit +3 (every `DamageSource` carrier - glaive, arrow, laser), kill +5, damage taken +10. No gain while a Rage ability runs, half gain above 50, decay -2/s after 5 s out of combat. |
+| `Stamina` | Player | Rewritten as a `float` bar: continuous regen (1 dash / 3 s), `CanDash`, static event `OnStaminaChanged`. |
+| `FelBar`, `RageBar`, `StaminaBar` | UI sliders | Listen to the event, call `SmoothBar.SetValue`. Health still uses the course path (`GameObject.Find`). |
+| `SmoothBar` | UI sliders | Eased fill (exponential approach in `Update`), lagging ghost slider, health-only flinch and danger colours. |
+| `FelShield` | Player | Key 4 (Abilities map): costs 50 Fel, 5 s, shows `Shield Visual`, 3 absorb charges via `TryAbsorbHit()` called from `PlayerHealth.TakeDamage`. An absorbed hit costs no HP, gives no Rage, no knockback, but still starts the invulnerability window. |
+| `AuraDamage` | Shield Visual, Glaive Tornado prefab | While enabled: hits enemies in a radius on entry, then per enemy every `hitInterval` (dictionary of next-hit times, `OverlapCircleNonAlloc`); breaks `Destructible`s. |
+| `RageHold` + `IRageWeapon` | Player; Glaive, Bow | Hold RMB (Combat > RageAbility) with Rage >= 50 to run the active weapon's Rage ability, draining 10 Rage/s. Switching weapon ends it. |
+| Glaive tornado | `Glaive` + `Glaive Tornado` prefab (`AuraDamage` + `Spin`) | Spawned under the player while RMB is held; the held glaive hides and stops swinging. |
+| Bow Rapid Fire | `Bow` | Coroutine fires an arrow every 0.15 s while RMB is held; left click is ignored meanwhile. |
+| `RageFrame` | UI image behind the slots | Shown when Rage >= 50 and the held weapon is an `IRageWeapon`; follows `ActiveInventory.OnActiveSlotChanged`. Look still being tuned. |
+| `EnemyPathfinding.Daze` | enemies | Speed multiplier for a duration; a `[ContextMenu]` test stays until the Demon Form nova uses it. |
 
 ---
 
@@ -117,8 +139,9 @@ Checked against the scripts on 2026-10-29. "Close to" = the idea is there, not t
 |---|---|---|
 | Singleton | `Singleton<T>` and its 11 users | Generic base class with duplicate destruction - more robust than LuaLander's `Instance = this`. |
 | State | `EnemyAI` (`enum State` + `switch`) | The simplest form. The pattern's class-per-state version pays off once enemies get more states (Riddle of Steel's guards and bosses). |
-| Strategy | `IWeapon`, `IEnemy` | Each weapon/enemy type plugs its own `Attack()` behind one interface. |
+| Strategy | `IWeapon`, `IEnemy`, `IRageWeapon` | Each weapon/enemy type plugs its own `Attack()` behind one interface; `RageHold` asks `as IRageWeapon` and runs whatever ability the held weapon has. |
+| Component / composition | `AuraDamage`, `Spin` | One damage-in-a-radius component serves the FelFire Shield, the glaive tornado and later the Demon Form's claws. |
 | Type Object / data-driven | `WeaponInfo` ScriptableObject | Numbers live in assets, not in code. |
 | Factory (close to) | `PickUpSpawner.DropItems()` | Decides what to create; callers do not. |
-| **Observer - missing** | none: the code has no C# events | Scripts call each other directly. LuaLander and FerryHeist do the opposite (events, logic apart from visuals). Worth comparing when the course reaches Observer. |
+| Observer (added 2026-10-31) | `Fel.OnFelChanged`, `Rage.OnRageChanged`, `Stamina.OnStaminaChanged`, `ActiveInventory.OnActiveSlotChanged` | Static C# events: the Player is destroyed on death and recreated in Town while the UI survives, so bars subscribe once and hear every new Player. Each source broadcasts its starting value in `Start`. The course code itself still calls scripts directly. |
 | **Object Pool - missing** | `Projectile`, death VFX | Created with `Instantiate`, removed with `Destroy`. Fine at this size; Riddle of Steel's crowds of enemies are where pooling matters. |
