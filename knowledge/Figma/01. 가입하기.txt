@@ -1,0 +1,9 @@
+* 가입하기
+
+- 가입시 플랜 선택 스타터 플랜(무료)
+- 학생 인증하면 혜택(프로페셔널 플랜과 동일)
+: https://www.figma.com/student/apply
+
+- 유료 플랜
+: 프로페셔널(Professional) 플랜 / $12(1년 결제 시)
+기업(Organization) 플랜 / $45(1년 결제 시)

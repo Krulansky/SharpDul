@@ -1,0 +1,9 @@
+* 등록할 수 있는 스타일 종류
+
+- Colors : Fill, Stroke, Background Color
+
+- Text : Font Family, Size, Line Height, Spacing
+
+- Effects : Drop Shadow, Inner Shadow, Layer Blur, Background Blur
+
+- Layout Grids : Row, Column, Grid

@@ -1,0 +1,12 @@
+* 크롬 개발자 도구에서 알려 주는 브레이크포인트
+
+- Mobile S : 320px
+- Mobile M : 375px
+- Mobile L : 425px
+- Tablet : 768px
+- Laptop : 1024px
+- Laptop L : 1440px
+- 4K : 2560px
+
+- Stat-Counter : 많이 쓰이는 해상도, 디바이스와 OS 점유율 등의 나라별 정리 사이트
+https://gs.statcounter.com/
