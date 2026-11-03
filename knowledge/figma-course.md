@@ -70,5 +70,6 @@ lesson 12 wireframe `Post 01 – Announce` 1080x1080 (Image / Title / CTA boxes,
 lessons 13-15 - CTA On click -> Navigate to Screenshot 01, Dissolve 300 ms, Flow 1, works in
 Present. Steam rule noted: no text or marketing on store screenshots.
 Lesson 08: Better Font Picker crashes in the 2026 UI - use the built-in font dropdown (live preview). Course plugins may be dead; test before recommending.
-Still to do: lesson 08 (other plugins), 16 (export x1/x2/x3), a Text Style, real art in the frames.
+Title font: Metamorphous Regular 64, Text Style `Title/Hero` (director tried pixel fonts and rejected them). All 4 style kinds now exist.
+Still to do: lesson 08 (other plugins), 16 (export, waits for an itch.io upload), real art in the frames.
 Token tip from the director's teacher: verify via MCP reads, ask for screenshots only when stuck.
