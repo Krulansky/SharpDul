@@ -63,3 +63,11 @@ auto-layout frame with Constraints Center / Top.
 Teaching lessons learned: the director needs exact panel locations one step at a time;
 shortcuts fail while typing in a text box (Esc first); check which Layers row is selected
 before editing (Shift+A selects the new wrapper frame).
+Done later the same day: Effect style `Glow/FelFire` (drop shadow 0/0, blur 24, #B8FF1F 80%)
+on the title, which the director recoloured to FelFire on a Demonic Purple cover (their call);
+lesson 11 (Steam screenshots 1920x1080, export 2x for 4K) - `Screenshot 01 – Town` frame;
+lesson 12 wireframe `Post 01 – Announce` 1080x1080 (Image / Title / CTA boxes, centred);
+lessons 13-15 - CTA On click -> Navigate to Screenshot 01, Dissolve 300 ms, Flow 1, works in
+Present. Steam rule noted: no text or marketing on store screenshots.
+Still to do: lesson 08 (plugins), 16 (export x1/x2/x3), a Text Style, real art in the frames.
+Token tip from the director's teacher: verify via MCP reads, ask for screenshots only when stuck.
