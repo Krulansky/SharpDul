@@ -43,3 +43,23 @@ The course PDF/video and installers are not in the repo (kept local, too large /
 | - | `! 참고/디자인 시스템과 아토믹 디자인.txt` | Design system, Atomic design | Design system = standardised principles, layout patterns, code; Atomic design = small elements combined into larger ones. |
 | - | `! 참고/레퍼런스 사이트.txt` | References | Unsplash, Behance, Dribbble, Bestfolios, Cofolios, Awwwards, Medium, Brunch, noonnu (Korean fonts). |
 | - | `! 예제/` | Example files | Course example `.fig` (Community) + pizza / Italy flag images. |
+
+## Progress log
+
+Figma file: **2D Combat - Game Promo Kit** (Drafts, Pavol Dulovič's team),
+https://www.figma.com/design/OHULpqrLyylz8NnorNjJIp - Starter plan = max 3 pages, so the kit
+uses pages `Cover & Brand`, `Promo Assets` (Sections: Key Art, Store Screenshots, Social Posts,
+itch.io Page) and `Playground`.
+
+Game working title: **Outer Lands** (director, 2026-11-03).
+Brand colours (director's words, hex values chosen by the agent to match, editable styles):
+`Brand/FelFire` #B8FF1F (intensely glowing yellow-green fel flame), `Brand/Demonic Purple`
+#6B3FA0 (demon-hunter / night-elf purple), `Brand/Rage Red` #E8361C (red-amber rage flame).
+Current sprites are course assets and will all be redrawn before release - colours may change.
+
+Done (2026-11-03): lessons 04, 05, 07, 09, 10 - itch.io `Cover 630x500` frame with grid style
+`Grid/Cover 6col`, FelFire fill, `OUTER LANDS` title (Inter Semi Bold 64, Rage Red) in a Hug
+auto-layout frame with Constraints Center / Top.
+Teaching lessons learned: the director needs exact panel locations one step at a time;
+shortcuts fail while typing in a text box (Esc first); check which Layers row is selected
+before editing (Shift+A selects the new wrapper frame).
