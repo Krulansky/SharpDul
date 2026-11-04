@@ -55,6 +55,12 @@ and calls `KnockBack()`, `Shout()`, `TakeDamage()`).
 
 Challenge progress:
 1. (2026-11-04) Step 1 - the director lists what is wrong before anything is rewritten.
+   Done. Got: 3 jobs; noticed Character never acts on its own. Missed: Enemy knows 3 method
+   names and their order (not just the type); `FindObjectOfType` with two players returns an
+   arbitrary one, not an error; magic number / string trigger. Unsure who should decide the
+   reaction to a hit (-> skill gap: who owns behaviour).
+2. Step 2 - design in words: which components, who decides the reaction, how Enemy finds its
+   target. No code yet.
 
 ## Outside the course
 

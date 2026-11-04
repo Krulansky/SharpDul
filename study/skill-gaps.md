@@ -6,6 +6,7 @@ course logs; used to choose quiz topics and Lab exercises.
 | Topic | Evidence | Status |
 |---|---|---|
 | Interfaces vs base classes | `Bow` had the method but not `IRageWeapon` in its declaration (2026-11-01) | seen once |
+| Who owns a behaviour (caller vs. receiver decides the reaction to a hit) | Challenge 1.5, question 5: "neviem" (2026-11-04) | working on it |
 | Cached values going stale (cache invalidation) | `ActiveWeapon` kept the old weapon's cooldown; `SceneManagement` keeps the transition name after death | Design Patterns course, lesson 2 |
 
 Quiz results are not here yet: they live on the iPhone. A backup export (Backup > Export) sent
