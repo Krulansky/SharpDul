@@ -59,8 +59,14 @@ Challenge progress:
    names and their order (not just the type); `FindObjectOfType` with two players returns an
    arbitrary one, not an error; magic number / string trigger. Unsure who should decide the
    reaction to a hit (-> skill gap: who owns behaviour).
-2. Step 2 - design in words: which components, who decides the reaction, how Enemy finds its
-   target. No code yet.
+2. Step 2 - design in words. Answered partly: listed Unity components (Animator,
+   AudioSource) instead of own scripts, but felt TakeDamage belongs in its own class (right).
+   Parameters: guessed the reactions, not the hit data (damage, source). Target lookup: did
+   not remember. The instructor's solution: `IAttackable.TakeHit()` (Character reacts to the hit
+   itself) + `Attack(IAttackable target)` (the target is passed in). It is a toy example: it
+   still has 10 and the "KnockBack" string.
+3. Next: wait for the rest of the instructor's lesson, then compare with Outer Lands
+   (`PlayerHealth.TakeDamage(int, Transform)`, `Projectile.OnTriggerEnter2D`).
 
 ## Outside the course
 
