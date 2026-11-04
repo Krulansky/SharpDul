@@ -630,3 +630,18 @@ laws. Rules 1 and 6 in particular need the caveat.
 10. **Law of Demeter: talk to friends, not friends of friends.**
     `(currentActiveWeapon as IWeapon).GetWeaponInfo().weaponDamage` reaches three objects deep.
     Asking the weapon for `GetDamage()` keeps callers from breaking when `WeaponInfo` changes.
+
+### What to cache (and what goes stale)
+
+- **Cache references to components on your own GameObject in `Awake` (`rb`, `flash`), and read
+  other scripts' data live.** A cached copy of another script's number (HP, a cooldown, a
+  starting speed) is a second truth. Every new method that changes the first truth must
+  "remember" the copy, and the one that forgets is the bug. Our two cases:
+  - `ActiveWeapon` kept the old weapon's cooldown after a switch.
+  - `PlayerController.startingMoveSpeed` undoes an Inspector change at the next dash.
+- **Signs of a cache:** bool flags, fields set in a callback, and comments like "don't forget
+  to update X".
+- **A list filled by `OnTriggerEnter2D` / `OnTriggerExit2D` keeps enemies that died inside it**
+  (Exit does not fire on `Destroy`). Either drop them on their death event, or skip the list and
+  query the area when you need it (`OverlapCircleNonAlloc`).
+

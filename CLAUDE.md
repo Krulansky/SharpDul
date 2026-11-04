@@ -7,6 +7,13 @@ learns something that would apply to any game, add an entry there. `knowledge/` 
 about one source project each. This file is in the repository on purpose:
 it is the only context that reaches every machine. Do not rely on memory from other sessions.
 
+## Course material the director sends
+
+Screenshots, lecture notes and comment threads from a course go through the **study inbox**:
+`study/README.md` explains the buckets (projects / skill / training / general / parked), and
+`study/<course>.md` is the log of the current course. Sort first, then move items to their files.
+Stay with one course at a time.
+
 ## What this is
 
 **SharpDul** is the director's personal gamedev coach: spaced-repetition quizzes and live labs
