@@ -65,6 +65,14 @@ Session handoff between machines and sessions. Keep it short and current.
   2026-11-01: the Lab now uses the project's current Stamina (float, CanDash, regenPerSecond 1/3
   in Update, a bar instead of orbs) and PlayerHealth's new order (canTakeDamage first); three
   quiz snippets follow the newer PlayerHealth, Destructible.Break and float Rage.
+- **Mechanics Lab · AnimationCurve** (`Pages/ArcLab.razor`, `Logic/ArcSim.cs`, `Logic/AnimCurve.cs`,
+  `wwwroot/js/arclab.js`, 2026-11-04): fake height from 2DTopDownPixelCombat. Grape mode ports
+  GrapeProjectile (+ shadow) and GrapeLandSplatter (collider 0.2 s, OnTriggerEnter2D); PickUp mode
+  ports the loot pop and the magnet. `AnimCurve` evaluates Unity's non-weighted Hermite keys with the
+  real keys from the prefabs (Grape peak 0.4996 at t 0.498; FelFire Globe peak 0.203). Drag keys on
+  the graph, presets, sliders for duration/heightY/popDuration/pickUpDistance/accelerationRate,
+  tap the field to walk. Verified in headless Chromium: standing still gets hit, dodging does not,
+  globes are collected, key drag changes the arc.
 - Look: neutral grey placeholders. The director designs the visual identity.
 
 Verified in headless Chromium at iPhone 13 size, served under `/SharpDul/` like GitHub Pages:

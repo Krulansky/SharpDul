@@ -1,0 +1,386 @@
+@page "/lab/arc"
+@implements IAsyncDisposable
+@using System.Diagnostics
+@using System.Globalization
+@using SharpDul.Pocket.Localization
+@using SharpDul.Pocket.Logic
+@inject IJSRuntime JS
+@inject Localizer Loc
+
+@* Fake height along an AnimationCurve: the Grape's lob and the loot pop. *@
+
+<PageTitle>SharpDul · Arc Lab</PageTitle>
+
+<nav class="top-bar">
+    <a href="">@Loc["home"]</a>
+    <span class="muted">@Loc["mechanicsLab"] · AnimationCurve</span>
+</nav>
+
+<div class="preset-row">
+    <button class="chip-button @(grapeMode ? "active" : "")" @onclick="() => SetMode(true)">Grape</button>
+    <button class="chip-button @(!grapeMode ? "active" : "")" @onclick="() => SetMode(false)">PickUp</button>
+</div>
+
+<div class="lab-stage">
+    <canvas @ref="sceneCanvas" class="lab-canvas arc"></canvas>
+</div>
+
+@* The lit lines, right under the game, so you see them while you play. *@
+<pre class="code lab-live tall"><code>@foreach (CodeLine line in CodeLines().Where(line => IsLit(line.Key)).DefaultIfEmpty(new CodeLine(null, "// ...")))
+{<span class="code-line @(line.Key != null ? "hl" : "")">@line.Text</span>}</code></pre>
+
+<p class="muted lab-note">@(grapeMode ? Loc.Format("arcGrapeStats", sim.Hits) : Loc.Format("arcPickUpStats", sim.Collected))</p>
+<div class="lab-controls">
+    @if (grapeMode)
+    {
+        <button class="lab-key" @onclick="sim.Throw">@Loc["arcThrow"]</button>
+        <label class="lab-toggle arc-auto">
+            <input type="checkbox" checked="@sim.AutoThrow" @onchange="e => sim.AutoThrow = e.Value is true" />
+            <span>@Loc["arcAuto"]</span>
+        </label>
+    }
+    else
+    {
+        <button class="lab-key" @onclick="() => sim.DropLoot(3)">@Loc["arcDrop"]</button>
+    }
+</div>
+
+<section class="card">
+    <h2><code>animCurve</code></h2>
+    <p class="muted lab-note">@Loc["arcCurveHelp"]</p>
+    <canvas @ref="curveCanvas" class="lab-curve"></canvas>
+    <p class="muted lab-note">@KeysText</p>
+    <div class="preset-row">
+        @foreach (CurvePreset preset in CurvePresets)
+        {
+            <button class="chip-button" @onclick="() => ApplyCurve(preset)">@Loc[preset.Key]</button>
+        }
+    </div>
+</section>
+
+<section class="card">
+    <h2>@(grapeMode ? "GrapeProjectile" : "PickUp")</h2>
+    @if (grapeMode)
+    {
+        @Slider("duration", sim.Duration, 0.3f, 4f, 0.1f, v => sim.Duration = v)
+        @Slider("heightY", sim.GrapeHeightY, 0f, 10f, 0.5f, v => sim.GrapeHeightY = v)
+    }
+    else
+    {
+        @Slider("popDuration", sim.PopDuration, 0.1f, 2f, 0.05f, v => sim.PopDuration = v)
+        @Slider("heightY", sim.PickUpHeightY, 0f, 4f, 0.1f, v => sim.PickUpHeightY = v)
+        @Slider("pickUpDistance", sim.PickUpDistance, 0.5f, 8f, 0.5f, v => sim.PickUpDistance = v)
+        @Slider("accelerationRate", sim.AccelerationRate, 0f, 0.5f, 0.01f, v => sim.AccelerationRate = v)
+    }
+    <button class="link-button" @onclick="ResetValues">@Loc["resetValues"]</button>
+</section>
+
+<section class="card">
+    <h2>@Loc["tryThis"]</h2>
+    <ul class="why">
+        @foreach (string tip in grapeMode ? new[] { "arcTip1", "arcTip2", "arcTip3", "arcTip4" } : new[] { "arcTip5", "arcTip6", "arcTip7" })
+        {
+            <li>@Loc[tip]</li>
+        }
+    </ul>
+</section>
+
+<section class="card">
+    <h2>@Loc["code"]</h2>
+    <pre class="code"><code>@foreach (CodeLine line in CodeLines())
+{<span class="code-line @(IsLit(line.Key) ? "hl" : "")">@line.Text</span>}</code></pre>
+    <p class="muted source">2DTopDownPixelCombat · @(grapeMode ? "Scripts/Enemies/GrapeProjectile.cs, GrapeLandSplatter.cs · Prefabs/Enemies/Grape/Grape Projectile.prefab" : "Scripts/Misc/PickUp.cs · Prefabs/Pickups/Stamina Globe.prefab")</p>
+</section>
+
+@code {
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+    private const double FlashSeconds = 0.45;
+
+    private record CodeLine(string? Key, string Text);
+
+    private record CurvePreset(string Key, Func<AnimCurve> Create);
+
+    private static readonly CurvePreset[] CurvePresets =
+    {
+        new("curveYours", AnimCurve.Grape),
+        new("curveFelFire", AnimCurve.FelFireGlobe),
+        new("curveFull", AnimCurve.FullHeight),
+        new("curveLate", AnimCurve.LateDrop),
+        new("curveFlat", AnimCurve.Flat),
+    };
+
+    private readonly ArcSim sim = new();
+    private ElementReference sceneCanvas;
+    private ElementReference curveCanvas;
+    private CancellationTokenSource? loopCancel;
+    private readonly Stopwatch clock = Stopwatch.StartNew();
+    private readonly Dictionary<string, double> flashes = new();
+    private string? touchedSlider;
+    private double touchedAt;
+    private bool grapeMode = true;
+    private int tapsSeen;
+
+    private AnimCurve Curve
+    {
+        get => grapeMode ? sim.GrapeCurve : sim.PickUpCurve;
+        set
+        {
+            if (grapeMode) sim.GrapeCurve = value; else sim.PickUpCurve = value;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        sim.OnLine += key => flashes[key] = clock.Elapsed.TotalSeconds;
+    }
+
+    private bool Flashing(string key) =>
+        flashes.TryGetValue(key, out double at) && clock.Elapsed.TotalSeconds - at < FlashSeconds;
+
+    private bool IsLit(string? key)
+    {
+        if (key == null)
+        {
+            return false;
+        }
+        if (key == touchedSlider && clock.Elapsed.TotalSeconds - touchedAt < 1.5)
+        {
+            return true;
+        }
+        return key switch
+        {
+            "lobStep" => sim.Lobs.Count > 0,
+            "popStep" => sim.Globes.Any(globe => globe.Popping),
+            "magnet" => sim.Globes.Any(globe => globe.DirX != 0f || globe.DirY != 0f),
+            "accelerate" => sim.Globes.Any(globe => globe.DirX != 0f || globe.DirY != 0f),
+            "colliderOn" => sim.Splatters.Any(splatter => splatter.ColliderOn),
+            _ => Flashing(key),
+        };
+    }
+
+    private IEnumerable<CodeLine> CodeLines()
+    {
+        if (grapeMode)
+        {
+            ArcSim.Lob? lob = sim.LastLob;
+            string linear = lob == null ? "" : $"  // = {F2(lob.LinearT)}";
+            string heightT = lob == null ? "" : $"  // = {F2(lob.HeightT)}";
+            string height = lob == null ? "" : $"  // = {F2(lob.Height)}";
+            yield return new(null, "// GrapeProjectile.cs");
+            yield return new("duration", $"[SerializeField] private float duration = 1f;  // Inspector: {F(sim.Duration)}");
+            yield return new("heightY", $"[SerializeField] private float heightY = 3f;  // Inspector: {F(sim.GrapeHeightY)}");
+            yield return new("throw", "Vector3 playerPos = PlayerController.Instance.transform.position;");
+            yield return new("throw", "StartCoroutine(ProjectileCurveRoutine(transform.position, playerPos));");
+            yield return new("lobStep", "timePassed += Time.deltaTime;");
+            yield return new("lobStep", $"float linearT = timePassed / duration;{linear}");
+            yield return new("lobStep", $"float heightT = animCurve.Evaluate(linearT);{heightT}");
+            yield return new("lobStep", $"float height = Mathf.Lerp(0f, heightY, heightT);{height}");
+            yield return new("lobStep", "transform.position = Vector2.Lerp(startPosition, endPosition, linearT) + new Vector2(0f, height);");
+            yield return new("lobStep", "grapeShadow.transform.position = Vector2.Lerp(startPosition, endPosition, linearT);");
+            yield return new("land", "Instantiate(splatterPrefab, transform.position, Quaternion.identity);");
+            yield return new(null, "// GrapeLandSplatter.cs");
+            yield return new("colliderOn", "Invoke(\"DisableCollider\", 0.2f);");
+            yield return new("splatHit", "playerHealth?.TakeDamage(1, transform);");
+            yield return new("colliderOff", "GetComponent<CapsuleCollider2D>().enabled = false;");
+        }
+        else
+        {
+            ArcSim.Globe? globe = sim.LastGlobe;
+            string linear = globe == null ? "" : $"  // = {F2(globe.LinearT)}";
+            string heightT = globe == null ? "" : $"  // = {F2(globe.HeightT)}";
+            string height = globe == null ? "" : $"  // = {F2(globe.Height)}";
+            string speed = globe == null ? "" : $"  // = {F2(globe.MoveSpeed)}";
+            yield return new(null, "// PickUp.cs");
+            yield return new("popDuration", $"[SerializeField] private float popDuration = 1f;  // Inspector: {F(sim.PopDuration)}");
+            yield return new("heightY", $"[SerializeField] private float heightY = 1.5f;  // Inspector: {F(sim.PickUpHeightY)}");
+            yield return new("pickUpDistance", $"[SerializeField] private float pickUpDistance = 5f;  // Inspector: {F(sim.PickUpDistance)}");
+            yield return new("accelerationRate", $"[SerializeField] private float accelerationRate = .2f;  // Inspector: {F(sim.AccelerationRate)}");
+            yield return new("drop", "float randomX = transform.position.x + Random.Range(-2f, 2f);");
+            yield return new("drop", "float randomY = transform.position.y + Random.Range(-1f, 1f);");
+            yield return new("popStep", $"float linearT = timePassed / popDuration;{linear}");
+            yield return new("popStep", $"float heightT = animCurve.Evaluate(linearT);{heightT}");
+            yield return new("popStep", $"float height = Mathf.Lerp(0f, heightY, heightT);{height}");
+            yield return new("popStep", "transform.position = Vector2.Lerp(startPoint, endPoint, linearT) + new Vector2(0f, height);");
+            yield return new("magnet", "if (Vector3.Distance(transform.position, playerPos) < pickUpDistance)");
+            yield return new("outOfRange", "moveDir = Vector3.zero; moveSpeed = 0f;");
+            yield return new("accelerate", $"if (moveDir != Vector3.zero) {{ moveSpeed += accelerationRate; }}{speed}");
+            yield return new("accelerate", "rb.velocity = moveDir * moveSpeed;");
+            yield return new("collect", "DetectPickupType(); Destroy(gameObject);");
+        }
+    }
+
+    private string KeysText => string.Join("   ", Curve.Keys.Select((key, i) => $"key {i}: ({F2(key.Time)}, {F2(key.Value)})"));
+
+    private RenderFragment Slider(string name, float value, float min, float max, float step, Action<float> set) => @<label class="lab-slider">
+        <span class="lab-slider-label"><code>@name</code> = <strong>@F(value)</strong></span>
+        <input type="range" min="@F(min)" max="@F(max)" step="@F(step)" value="@value.ToString(Inv)" @oninput="e => OnSlider(e, set, name)" />
+    </label>;
+
+    private void OnSlider(ChangeEventArgs e, Action<float> set, string key)
+    {
+        if (float.TryParse(e.Value?.ToString(), NumberStyles.Float, Inv, out float value))
+        {
+            set(value);
+            touchedSlider = key;
+            touchedAt = clock.Elapsed.TotalSeconds;
+        }
+    }
+
+    private void SetMode(bool grape)
+    {
+        grapeMode = grape;
+        flashes.Clear();
+        sim.Reset();
+        if (!grape)
+        {
+            sim.DropLoot(3);
+        }
+    }
+
+    private void ApplyCurve(CurvePreset preset)
+    {
+        Curve = preset.Create();
+    }
+
+    private void ResetValues()
+    {
+        ArcSim defaults = new();
+        if (grapeMode)
+        {
+            sim.Duration = defaults.Duration;
+            sim.GrapeHeightY = defaults.GrapeHeightY;
+            sim.GrapeCurve = AnimCurve.Grape();
+        }
+        else
+        {
+            sim.PopDuration = defaults.PopDuration;
+            sim.PickUpHeightY = defaults.PickUpHeightY;
+            sim.PickUpDistance = defaults.PickUpDistance;
+            sim.AccelerationRate = defaults.AccelerationRate;
+            sim.PickUpCurve = AnimCurve.Grape();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("sharpDulArc.attach", sceneCanvas, curveCanvas);
+        loopCancel = new CancellationTokenSource();
+        _ = RunLoopAsync(loopCancel.Token);
+    }
+
+    // Fixed timestep: as many 0.02 s ticks as real time has passed.
+    private async Task RunLoopAsync(CancellationToken cancel)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
+        double simulated = clock.Elapsed.TotalSeconds;
+        int frame = 0;
+        JsInput input = new() { DragKey = -1 };
+
+        while (await timer.WaitForNextTickAsync(cancel))
+        {
+            if (input.Taps != tapsSeen)
+            {
+                tapsSeen = input.Taps;
+                sim.SetTarget(input.TapX, input.TapY);
+            }
+            if (input.DragKey >= 0)
+            {
+                Curve.MoveKey(input.DragKey, input.DragTime, input.DragValue);
+            }
+
+            double now = clock.Elapsed.TotalSeconds;
+            int steps = 0;
+            while (simulated + ArcSim.FixedDeltaTime <= now && steps < 5)
+            {
+                sim.Tick();
+                simulated += ArcSim.FixedDeltaTime;
+                steps++;
+            }
+            if (steps == 5)
+            {
+                simulated = now;   // the tab was asleep - do not fast-forward
+            }
+
+            input = await JS.InvokeAsync<JsInput>("sharpDulArc.frame", cancel, sceneCanvas, curveCanvas, DrawState());
+
+            if (++frame % 4 == 0)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private object DrawState()
+    {
+        AnimCurve curve = Curve;
+        float? liveT = null, liveV = null;
+        if (grapeMode && sim.Lobs.Count > 0)
+        {
+            liveT = Math.Min(sim.Lobs[^1].LinearT, 1.1f);
+            liveV = sim.Lobs[^1].HeightT;
+        }
+        else if (!grapeMode && sim.Globes.LastOrDefault(globe => globe.Popping) is ArcSim.Globe popping)
+        {
+            liveT = Math.Min(popping.LinearT, 1.1f);
+            liveV = popping.HeightT;
+        }
+
+        return new
+        {
+            grapeMode,
+            viewMinX = ArcSim.ViewMinX, viewMaxX = ArcSim.ViewMaxX, viewMinY = ArcSim.ViewMinY, viewMaxY = ArcSim.ViewMaxY,
+            grapeX = ArcSim.GrapeX, grapeY = ArcSim.GrapeY, attackRange = ArcSim.AttackRange,
+            inRange = sim.DistanceToGrape < ArcSim.AttackRange,
+            bushX = ArcSim.BushX, bushY = ArcSim.BushY, pickUpDistance = sim.PickUpDistance,
+            playerX = sim.PlayerX, playerY = sim.PlayerY,
+            targetX = sim.TargetX, targetY = sim.TargetY,
+            playerHalfX = ArcSim.PlayerHalfX, playerHalfY = ArcSim.PlayerHalfY,
+            flashing = sim.PlayerFlashing,
+            splatHalfX = ArcSim.SplatterHalfX, splatHalfY = ArcSim.SplatterHalfY, fadeTime = ArcSim.SplatterFadeTime,
+            splatters = sim.Splatters.Select(s => new { x = s.X, y = s.Y, age = s.Age, on = s.ColliderOn }),
+            lobs = sim.Lobs.Select(l => new
+            {
+                x = l.X, y = l.Y, height = l.Height, shadowX = l.ShadowX, shadowY = l.ShadowY,
+                endX = l.EndX, endY = l.EndY, path = l.Path.Select(p => new[] { p.X, p.Y }),
+            }),
+            globeRadius = ArcSim.GlobeRadius,
+            globes = sim.Globes.Select(g => new { x = g.X, y = g.Y, height = g.Popping ? g.Height : 0f, popping = g.Popping }),
+            keys = curve.Keys.Select(k => new { t = k.Time, v = k.Value }),
+            samples = Enumerable.Range(0, 111).Select(i => curve.Evaluate(i / 100f)),
+            liveT,
+            liveV,
+            label = grapeMode ? Loc["arcTapToMove"] : Loc["arcTapToMovePickUp"],
+        };
+    }
+
+    private class JsInput
+    {
+        public float TapX { get; set; }
+        public float TapY { get; set; }
+        public int Taps { get; set; }
+        public int DragKey { get; set; }
+        public float DragTime { get; set; }
+        public float DragValue { get; set; }
+    }
+
+    private static string F(float value) => value.ToString("0.##", Inv);
+
+    private static string F2(float value) => value.ToString("0.00", Inv);
+
+    public async ValueTask DisposeAsync()
+    {
+        loopCancel?.Cancel();
+        try
+        {
+            await JS.InvokeVoidAsync("sharpDulArc.detach");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}
