@@ -37,6 +37,25 @@ Sorted:
 - **N** One paragraph added to `GAMEDEVNOTES.md` (what to cache).
 - **-** Immutable records / event sourcing: parked (no project needs it now).
 
+## Lesson 1.5 - Sources of spaghetti code
+
+Slides: static and global state (bugs, poor unit testability, hard to follow, multithreading,
+"and now you need two..."). The example is `public static float mana` changed by `Update`,
+`UseAbility` and `UseManaPotion` from anywhere. High cohesion / loose coupling (two apps that
+talk through one link vs. lines crossing everywhere). Challenge: "Why are these classes bad?"
+(`Character` with animator + audio + health; `Enemy` that `FindObjectOfType<Character>()`
+and calls `KnockBack()`, `Shout()`, `TakeDamage()`).
+
+- **Challenge:** the director rewrites the two classes, step by step. The agent guides and does
+  not hand over a solution. Progress is kept below.
+- **P** Outer Lands already splits what `Character` mixes: `Knockback`, `Flash` and
+  `PlayerHealth` are separate components. Static events and singletons = this lesson's
+  "global state" (see `CLAUDE.md` rule 6 caveat).
+- **Q** The challenge itself is a good Build Lab puzzle later ("split Character into components").
+
+Challenge progress:
+1. (2026-11-04) Step 1 - the director lists what is wrong before anything is rewritten.
+
 ## Outside the course
 
 - **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
