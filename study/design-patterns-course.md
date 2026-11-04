@@ -37,6 +37,12 @@ Sorted:
 - **N** One paragraph added to `GAMEDEVNOTES.md` (what to cache).
 - **-** Immutable records / event sourcing: parked (no project needs it now).
 
+## Outside the course
+
+- **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
+  **Scythe** right after Elevation (director, 2026-11-04). It is a learning project and the
+  first practical step towards the Shaders/VFX study phase.
+
 ## Quiz and Lab backlog (bucket Q)
 
 - Area example: `SetWidth` updates `area`, the new `DoubleWidthAndHeight` forgets - what does
