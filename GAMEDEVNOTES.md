@@ -591,3 +591,42 @@ The director's own Rage/Fel systems in 2DTopDownPixelCombat (map in
 - **UI size advice needs the real numbers.** "Make the frame a bit bigger than the slot" failed:
   the slot was a 135 px grid cell, the frame 105 px, so it hid completely behind it. Read the
   layout (cell size, sibling order: later siblings draw on top) before suggesting sizes.
+
+## Ten coding commandments, read against our own Unity code (2026-11-04)
+
+A list the director found (source: a slide, author unknown). Each rule below has a note on
+where it holds in Unity and an example from 2DTopDownPixelCombat. The rules are directions, not
+laws. Rules 1 and 6 in particular need the caveat.
+
+1. **Code reads like English.** `if (!canTakeDamage) { return; }` needs no comment. *Caveat:*
+   drop "what" comments, but keep the "why" ones. "Read the new weapon's cooldown first,
+   otherwise the switch waits for the old one" (`ActiveWeapon.NewWeapon`) cannot be said in code.
+2. **Name things well.** `knockBackFloat` and `roamChangeDirFloat` name the type, not the
+   meaning. `knockBackThrust` and `roamDirectionChangeTime` would say what they hold. Rename a
+   serialized field with `[FormerlySerializedAs]` so the Inspector values survive, as `heigthY`
+   -> `heightY` did.
+3. **A class does one thing.** `PlayerHealth` takes damage, but it also drives the health bar,
+   plays death and loads Town. The Stamina rewrite did it right: `Stamina` holds the number and
+   `StaminaBar` shows it.
+4. **As little state as possible.** Every bool flag (`isShooting`, `canAttack`, `isDashing`)
+   can get out of step with the truth. Continuous stamina regen in `Update` replaced a refill
+   coroutine plus its restart logic.
+5. **Do not refactor before the third repetition.** `FelBar`, `RageBar` and `StaminaBar` are
+   the third copy of the same 26 lines, differing only in which event they listen to. That
+   makes them a fair candidate for one generic bar now, and not before.
+6. **No static or global state.** *Caveat for Unity:* our singletons and static events are
+   global state on purpose, because they are cheap and the games are small. The cost is real
+   all the same. `SceneManagement` remembering the last transition name after death is a
+   global-state bug, and static events outlive scenes unless every listener unsubscribes in
+   `OnDisable`. Keep globals few, and do not let them hold game rules.
+7. **Highly cohesive:** everything in a class serves its one job (see rule 3).
+8. **Loosely coupled.** `Stamina.OnStaminaChanged` is the good example: Stamina does not know
+   the bar exists. The counter-example is `DamageSource` and `PlayerHealth` calling
+   `Rage.Instance.Register...` directly. An `OnEnemyHit` / `OnDamageTaken` event would let Rage
+   listen instead.
+9. **Composition over inheritance.** Unity is built on it. `Knockback` and `Flash` sit on both
+   the player and the enemies, and `AuraDamage` serves three abilities. The one inheritance we
+   use is `Singleton<T>`.
+10. **Law of Demeter: talk to friends, not friends of friends.**
+    `(currentActiveWeapon as IWeapon).GetWeaponInfo().weaponDamage` reaches three objects deep.
+    Asking the weapon for `GetDamage()` keeps callers from breaking when `WeaponInfo` changes.
