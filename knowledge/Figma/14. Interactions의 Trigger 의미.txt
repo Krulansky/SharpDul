@@ -1,0 +1,21 @@
+* Interactions의 Trigger 의미
+
+- On Click : 데스크톱에서 클릭 또는 모바일에서 탭할 때 액션이 시작
+
+- On Drag : 화면에서 요소를 드래그할 때 액션이 시작
+
+- While Hovering : 마우스를 올렸을 때 액션이 시작, 마우스를 때면 원래의 모습으로 복구
+
+- While Pressing : 누르고 있는 동안 액션이 실행됩니다
+
+- Key/Gamepad : 키보드 단축키나 Xbox One, Ps4 및 Nintendo Switch Pro의 컨트롤러 입력에 따라 액션이 실행
+
+- Mouse Enter : 마우스를 올렸을 때 액션이 시작, 마우스를 때도 액션이 유지됨
+
+- Mouse Leave : 마우스를 뗐을 때 액션이 시작,  드롭다운 메뉴에서 옵션을 고르다 마우스를 바깥으로 이동할 경우 드롭다운이 닫히도록 만들 수 있음
+
+- Touch Down : 모바일 버전의 'Mouse Enter'
+
+- Touch Up : 모바일 버전의 ' Mouse Leave'
+
+- After Delay : 일정 시간이 지난 뒤 액션이 시작, 최상위 프레임에서만 적용 가능
