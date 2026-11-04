@@ -107,6 +107,9 @@ knowledge/   study notes per source project (falling-frenzy.md, 2d-topdown-pixel
 
 ## Next
 
+0. Later (director, 2026-11-04): a quiz pack from the ten coding commandments in
+   `GAMEDEVNOTES.md` ("which rule does this code break?"), using examples from Outer Lands.
+
 1. Director tries the Mechanics Lab and the language switch on the iPhone.
 2. More LuaLander questions, then Medium level (`?.Invoke`, dot product, SetActive vs events).
 3. Particle Lab (sandbox + "recreate this effect").

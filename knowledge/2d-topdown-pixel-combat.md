@@ -1,5 +1,7 @@
 # 2DTopDownPixelCombat - course map
 
+Working title since 2026-11-04: **Outer Lands** (the repo keeps its name for now).
+
 **Source:** the director's own project `github.com/Krulansky/2DTopDownPixelCombat`, built along the
 GameDev.tv course **Unity 2D RPG: Complete Combat System** (87 lectures), finished 2026-10-29
 (commit `a040944` "KURZ HOTOVY!"). Unity `2022.3.62f2`, URP 2D Renderer, new Input System.
