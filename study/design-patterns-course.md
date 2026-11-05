@@ -119,6 +119,16 @@ Challenge progress:
    ours hides more of the data. Comments: make fields private + `[SerializeField]`; LINQ and
    fluent APIs are the deliberate exception to "no chains".
 
+## Lesson 1.8 - Observer pattern
+
+Slide "Rampage Mode": a power-up makes the player invincible, enemies run away, health stops
+taking damage, UI tints red - many listeners react to one event.
+
+- **P** Outer Lands (director, 2026-11-05): Demon Form gets a fear effect. When the demon
+  spawns, enemies flee for 2 s; bosses and highlords are immune; name to be found (not
+  "Rampage"). Written in its `ROADMAP.md` > Demon Form. `DemonForm.OnDemonFormChanged` already
+  exists, so enemies only need to subscribe.
+
 ## Outside the course
 
 - **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
