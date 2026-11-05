@@ -185,6 +185,14 @@ Sorted:
   why `Start` vs `OnEnable` matters. Explained with a timeline (Start runs once, OnEnable on every
   enable; disabling a component does not stop its coroutines).
 
+End of the lesson: `delegate void CallbackType();` is the *type* of method a listener must
+be; `public event CallbackType onLevelUpAction` works the same as `event Action`, because
+`Action` is a ready-made delegate with that shape. The delegate had to be made `public`
+(red squiggle: a public event cannot use a private type). `Action<float>` means listeners take
+a float; the instructor removed it again to keep the sample simple. The director found the
+lesson very fast and dense, so it was explained with the "plug shape" picture and his own
+`Stamina` `Action<float, float>` -> `UpdateBar(float, float)`.
+
 Comments (sorted with the lesson):
 
 Comments (raw, to sort with the lesson):
@@ -230,4 +238,6 @@ Comments (raw, to sort with the lesson):
   would the second one do? (Medium)
 - Without the `event` keyword: what can another script do to `OnEnemySpawned`? (Medium)
 - You disable `Health` and enable it again: why subscribe in `OnEnable` rather than `Start`? (Medium)
+- Which method can listen to `event Action<float> OnHealthChanged`: `void A()`, `void B(float)`,
+  `float C()`? (Easy)
 - Lab idea: a "stale cache" toggle in the Combat Lab (cache `moveSpeed` in Start vs read it live).
