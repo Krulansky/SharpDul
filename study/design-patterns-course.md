@@ -180,7 +180,10 @@ Sorted:
   and subscribes in `OnEnable` / unsubscribes in `OnDisable`.
 - **Q** Backlog: method group vs call; what `event` forbids; why subscribe in `OnEnable`, not
   `Start`.
-- Challenge progress: (2026-11-05) skeleton with blanks given.
+- Challenge progress: (2026-11-05) skeleton with blanks given. Blanks right (`OnEnable`, `+=`,
+  `-=`). The "what happens in game" questions confused him: expected an error, and did not see
+  why `Start` vs `OnEnable` matters. Explained with a timeline (Start runs once, OnEnable on every
+  enable; disabling a component does not stop its coroutines).
 
 Comments (sorted with the lesson):
 
