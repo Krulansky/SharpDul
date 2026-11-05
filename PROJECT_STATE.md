@@ -80,6 +80,16 @@ a full Daily session, XP/active day saved across reload, export -> wipe -> impor
 Live at https://krulansky.github.io/SharpDul/ - director confirmed on the iPhone
 (2026-10-26) that it installs and progress survives. Export to Files not yet confirmed.
 
+## Study (since 2026-11-04)
+
+Course material goes through the study inbox (`study/README.md`). Current course: Design
+Patterns (`study/design-patterns-course.md`, order of courses in `study/path.md`), stopped after
+module 2 lesson 3 on 2026-11-05. Evidence-based weak spots are in `study/skill-gaps.md`. Notes
+for the paused Riddle of Steel: `knowledge/riddle-of-steel.md`.
+
+Waiting on the director: merge the Outer Lands branch `claude/gamedev-coach-app-eu5x6k`
+(Scythe decisions, Demon Form fear, level-up note, local path note).
+
 ## Layout
 
 ```

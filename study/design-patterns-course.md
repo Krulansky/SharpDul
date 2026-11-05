@@ -204,6 +204,13 @@ Comments (raw, to sort with the lesson):
   code not exposed in the Inspector. Brian: UnityEvents also help when many different sources
   feed one receiver (a Popup Text for damage, level-up, XP, healing, effects).
 
+## Where we stopped (2026-11-05)
+
+Finished: module 2, lesson 3 (Delegates, Actions and Events) including its OnDisable challenge.
+Next: the next lesson of module 2. Quiz backlog has grown (bottom of this file); the director
+will ask when to build it. The director's own exercise files live in their repo
+`Krulansky/CodingDesignPatterns` (not shared with the agent; send scripts as text or uploads).
+
 ## Outside the course
 
 - **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
