@@ -667,3 +667,19 @@ triangle points to what a class inherits or implements. A diamond means "holds a
 The point of the pattern is the direction of dependency: the observers know the subject, and the
 subject knows nobody ("Flip it").
 
+### UnityEvent or C# event?
+
+Both are the Observer pattern. They differ in where the link between subject and listener lives:
+
+| | `UnityEvent` (wired in the Inspector) | C# `event` (`+=` in code) |
+|---|---|---|
+| Link | scene/prefab data | code |
+| Rename the listener method | breaks silently: the Inspector shows *Missing* | compile error, found at once |
+| "Who listens to this?" | only visible by clicking through the Inspector | Find All References |
+| Runtime-spawned listeners | awkward (a prefab cannot point at a scene object) | natural: subscribe in `OnEnable` |
+| Unsubscribe | Unity handles it | you must `-=` in `OnDisable` |
+| Good for | one-off scene reactions a designer wires (trigger -> sound, door) | systems: health, stamina, enemies |
+
+Most LuaLander bugs were scene wiring, and a UnityEvent is scene wiring. Use it where a
+non-programmer would want to change the reaction, and keep game systems on C# events.
+

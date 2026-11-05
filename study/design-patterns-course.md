@@ -138,6 +138,21 @@ cohesion (7), one job (3). The director brought the instructor's answer; no chal
   "Rampage"). Written in its `ROADMAP.md` > Demon Form. `DemonForm.OnDemonFormChanged` already
   exists, so enemies only need to subscribe.
 
+## Module 2, lesson 2 - Observers with UnityEvents
+
+The instructor's sample project (Unity 2021.1.22f1): `Level` has a `UnityEvent` "On Level Up"
+wired in the Inspector to `ParticleSystem.Play` and, as the task, to `Health.ResetHealth()`.
+Comments: Simon thought Level still "calls" ResetHealth (tight coupling); Brian: the scripts
+know nothing about each other in code, the link lives in the Inspector, so it is loose coupling.
+
+- **N** UnityEvent vs C# event added to `GAMEDEVNOTES.md`.
+- **P** Outer Lands uses C# events (code-checked, needed for runtime-spawned enemies). A
+  UnityEvent fits one-off scene wiring (a trigger plays a sound, opens a gate).
+- **Q** Backlog: "you rename `ResetHealth` to `RefillHealth` - what happens with a C# event,
+  and what with a UnityEvent?" (Medium)
+- **-** The director asked whether a very active commenter really understands the topic. Not
+  judged (the comments were not sent); judge the claims, not the person.
+
 ## Outside the course
 
 - **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
