@@ -146,6 +146,8 @@ Comments: Simon thought Level still "calls" ResetHealth (tight coupling); Brian:
 know nothing about each other in code, the link lives in the Inspector, so it is loose coupling.
 
 - **N** UnityEvent vs C# event added to `GAMEDEVNOTES.md`.
+- **P** Level up (director, 2026-11-05): Outer Lands after the first publish (its `ROADMAP.md`
+  > *Ďalší patch*), and Riddle of Steel for sure (`knowledge/riddle-of-steel.md`).
 - **P** Outer Lands uses C# events (code-checked, needed for runtime-spawned enemies). A
   UnityEvent fits one-off scene wiring (a trigger plays a sound, opens a gate).
 - **Q** Backlog: "you rename `ResetHealth` to `RefillHealth` - what happens with a C# event,
