@@ -119,10 +119,19 @@ Challenge progress:
    ours hides more of the data. Comments: make fields private + `[SerializeField]`; LINQ and
    fluent APIs are the deliberate exception to "no chains".
 
-## Lesson 1.8 - Observer pattern
+## Module 2, lesson 1 - Observer pattern
 
-Slide "Rampage Mode": a power-up makes the player invincible, enemies run away, health stops
-taking damage, UI tints red - many listeners react to one event.
+Slides: "Rampage Mode" (a power-up makes the player invincible, enemies run away, health stops
+taking damage, UI tints red). The naive version makes Rampage call every one of them, so it is
+coupled to all of them and changes whenever any of them changes. "Flip It!": turn the arrows
+around, so Rampage UI, Health and every Enemy AI depend on Rampage and Rampage knows none of
+them. UML of the pattern: Subject (observerCollection, register/unregister/notify) and Observer
+(update) with concrete observers. "Which principles does this improve?": loose coupling (8),
+cohesion (7), one job (3). The director brought the instructor's answer; no challenge this time.
+
+- **N** UML -> C# event mapping added to `GAMEDEVNOTES.md`.
+- **Q** Backlog: read the UML (which arrow means what) and map it to `event` / `+=` / `-=` /
+  `Invoke`.
 
 - **P** Outer Lands (director, 2026-11-05): Demon Form gets a fear effect. When the demon
   spawns, enemies flee for 2 s; bosses and highlords are immune; name to be found (not
@@ -154,4 +163,7 @@ taking damage, UI tints red - many listeners react to one event.
   (Medium, from challenge 1.7)
 - Law of Demeter: which of three lines reaches through objects (`player.gun.ammo.roundsLeft`,
   `gun.GetRoundsLeft()`, `transform.position.x`)? (Easy - the last one is a value, fine)
+- UML: which part of the Observer diagram is `+=` / `-=` / `?.Invoke()` / the subscribed
+  method? (Easy, with `Stamina` + `StaminaBar` as the code)
+- Rampage: why does the naive version change every time Health or the UI changes? (Easy)
 - Lab idea: a "stale cache" toggle in the Combat Lab (cache `moveSpeed` in Start vs read it live).

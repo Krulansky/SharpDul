@@ -648,3 +648,22 @@ laws. Rules 1 and 6 in particular need the caveat.
   (Exit does not fire on `Destroy`). Either drop them on their death event, or skip the list and
   query the area when you need it (`OverlapCircleNonAlloc`).
 
+### Observer: the UML diagram is a C# event
+
+The pattern's UML (Subject with `observerCollection`, `registerObserver`, `unregisterObserver`,
+`notifyObservers`; Observer with `update()`) is built into C#:
+
+| UML | C# |
+|---|---|
+| Subject | the class that declares `public static event Action<float, float> OnStaminaChanged;` |
+| observerCollection | the event itself (it keeps the list of subscribed methods) |
+| registerObserver | `Stamina.OnStaminaChanged += UpdateBar;` (in `OnEnable`) |
+| unregisterObserver | `Stamina.OnStaminaChanged -= UpdateBar;` (in `OnDisable` - never skip it) |
+| notifyObservers | `OnStaminaChanged?.Invoke(CurrentStamina, maxStamina);` |
+| Observer.update() | the subscribed method, `UpdateBar(float, float)` |
+
+How to read the UML: a box is a class (name, fields, then methods; `+` = public). A hollow
+triangle points to what a class inherits or implements. A diamond means "holds a collection of".
+The point of the pattern is the direction of dependency: the observers know the subject, and the
+subject knows nobody ("Flip it").
+
