@@ -1,5 +1,7 @@
 # Study inbox
 
+The order of courses is in `study/path.md`.
+
 This is where course material the director sends is sorted. A lecture, a slide or a comment
 thread is not copied in whole. Each lesson gets one entry in its course log
 (`study/<course>.md`), and every useful point in it goes to exactly one bucket:
