@@ -68,6 +68,22 @@ Challenge progress:
 3. Next: wait for the rest of the instructor's lesson, then compare with Outer Lands
    (`PlayerHealth.TakeDamage(int, Transform)`, `Projectile.OnTriggerEnter2D`).
 
+## Lesson 1.6 - Composition over inheritance
+
+Slides: Animal > Mammal (MakeMilk) / Reptile (LayEggs) breaks on the Platypus, which needs both.
+With components (`MilkMakingComponent`, `EggLayingComponent`) each animal picks what it has.
+"Where does this go wrong?": `Character` (locomotion, attack, health) > `Player` / `Enemy`.
+
+- **P** Outer Lands is already built this way: `Knockback` and `Flash` sit on the player and the
+  enemies, `AuraDamage` serves three abilities, and weapons and enemies plug in through the
+  `IWeapon` / `IEnemy` interfaces. The one inheritance is `Singleton<T>`. Nothing new to propose.
+- **P** Riddle of Steel (paused): when its guards and bosses are designed, think in components
+  (move, attack, health, AI) instead of an enemy class tree.
+- **N** Already covered in `GAMEDEVNOTES.md` (rule 9 and "Composition beat a bespoke script").
+- **Q** Backlog below.
+- Question to the director (2026-11-05): where does `Character` > `Player` / `Enemy` break in
+  Outer Lands? Waiting for the answer.
+
 ## Outside the course
 
 - **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
@@ -86,4 +102,7 @@ Challenge progress:
   (Medium)
 - Name review: `Roaming()` / `Attacking()` are not verbs; `knockBackFloat`; `SceneManagement`
   vs the Unity namespace. (Easy, "which name is better?")
+- Platypus: with Mammal/Reptile classes, why can't it exist? Which components does it get? (Easy)
+- Outer Lands: a bush has health but never moves - which components does it need, and
+  what would a `Character` base class force on it? (Easy)
 - Lab idea: a "stale cache" toggle in the Combat Lab (cache `moveSpeed` in Start vs read it live).
