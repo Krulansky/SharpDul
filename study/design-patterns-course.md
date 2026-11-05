@@ -161,6 +161,20 @@ know nothing about each other in code, the link lives in the Inspector, so it is
 - **-** The director asked whether a very active commenter really understands the topic. Not
   judged (the comments were not sent); judge the claims, not the person.
 
+## Module 2, lesson 3 - Delegates, Actions and Events (in progress)
+
+Same sample scripts (Health, Level, Debugger). Comments arrived first; the lesson content is
+still to come, so nothing is sorted yet.
+
+Comments (raw, to sort with the lesson):
+- JimmyZ / Brian: `public event Action` belongs to one instance (subscribe to *that*
+  enemy's `Health.OnHealthChanged` for its health bar); `public static event Action` belongs to
+  the class (`Enemy.OnEnemySpawned += ...` to track every enemy). Note for later: Brian's
+  example writes `public static Action<Enemy> OnEnemySpawned` without the `event` keyword.
+- Peter Sykora / Brian: UnityEvents for designers working in the editor, `Action` for core
+  code not exposed in the Inspector. Brian: UnityEvents also help when many different sources
+  feed one receiver (a Popup Text for damage, level-up, XP, healing, effects).
+
 ## Outside the course
 
 - **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
