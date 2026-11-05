@@ -150,6 +150,12 @@ know nothing about each other in code, the link lives in the Inspector, so it is
   UnityEvent fits one-off scene wiring (a trigger plays a sound, opens a gate).
 - **Q** Backlog: "you rename `ResetHealth` to `RefillHealth` - what happens with a C# event,
   and what with a UnityEvent?" (Medium)
+- Sample scripts read (2026-11-05, start of the lesson, before the UnityEvent is added):
+  `Level` +10 XP every 0.2 s, level = XP / 200, so a level-up every 4 s; `Health` drains 2/s
+  from 100; `Debugger` logs every second. Findings: `HealthDrain` loops `while (currentHealth > 0)`,
+  so once health reaches 0 the coroutine ends and `ResetHealth()` no longer restarts the drain (a
+  stale-state trap from the caching lesson). With these numbers health only falls by 8 between
+  level-ups, so it never shows. `Debugger` polls every second, which is the opposite of an observer.
 - **-** The director asked whether a very active commenter really understands the topic. Not
   judged (the comments were not sent); judge the claims, not the person.
 
@@ -174,6 +180,8 @@ know nothing about each other in code, the link lives in the Inspector, so it is
 - Platypus: with Mammal/Reptile classes, why can't it exist? Which components does it get? (Easy)
 - Outer Lands: a bush has health but never moves - which components does it need, and
   what would a `Character` base class force on it? (Easy)
+- Health drain: health reaches 0, then `ResetHealth()` runs - does the drain continue? (Medium,
+  sample `Health.cs`)
 - `return ammo;` in a method that returns `int` - what does the compiler say, and what is the fix?
   (Medium, from challenge 1.7)
 - Law of Demeter: which of three lines reaches through objects (`player.gun.ammo.roundsLeft`,
