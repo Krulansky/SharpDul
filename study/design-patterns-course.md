@@ -82,7 +82,10 @@ With components (`MilkMakingComponent`, `EggLayingComponent`) each animal picks 
 - **N** Already covered in `GAMEDEVNOTES.md` (rule 9 and "Composition beat a bespoke script").
 - **Q** Backlog below.
 - Question to the director (2026-11-05): where does `Character` > `Player` / `Enemy` break in
-  Outer Lands? Waiting for the answer.
+  Outer Lands? Answer: "Health? the player has it, and the enemy learns it hit when it drops?"
+  That is a shared part, not a break, and it mixes in lesson 1.5 (the attacker does not need to
+  know). Explained: the break is something with only part of `Character`, like a bush (health,
+  no move, no attack) or a turret (attack, no move).
 
 ## Outside the course
 
