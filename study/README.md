@@ -24,3 +24,5 @@ Rules:
   `Cards` with a low box), topics they asked about, or bugs they hit. Do not guess.
 - **Q items wait.** Build quizzes and Labs only when the director asks; until then they collect
   in the backlog.
+- **Teaching style that works:** point at the exact line and give a skeleton with blanks.
+  Open-ended "think about..." questions confused the director (challenge 1.7).

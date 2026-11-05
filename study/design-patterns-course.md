@@ -102,6 +102,13 @@ Slides: `enemy.GetCurrentTarget().GetHealthComponent().DoDamage()` vs
 Challenge progress:
 1. (2026-11-05) Attempt 1 - hints given: count the dots, what GunUI must know, what is
    duplicated, who may change the public fields.
+   Result: found Player and Ammo (missed that Gun counts too); wanted "someone who shouts the
+   info to the UI" (Observer instinct, a later lesson); right that the public fields are not
+   needed; mixed up GunUI (ammo) with health. Said the questions were confusing and did not
+   know what "a chain of dots" meant. Lesson for the agent: abstract questions do not work,
+   so show the line and give blanks.
+2. Attempt 2 - fill-in skeleton: private `roundsLeft`, `GetRoundsLeft()` passed up through
+   Ammo -> Gun -> Player, GunUI calls one method.
 
 ## Outside the course
 
