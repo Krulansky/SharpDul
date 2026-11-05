@@ -26,3 +26,6 @@ Rules:
   in the backlog.
 - **Teaching style that works:** point at the exact line and give a skeleton with blanks.
   Open-ended "think about..." questions confused the director (challenge 1.7).
+- **Comment threads:** for each claim worth keeping, check it against the code or the docs
+  and write down who is right and why. Judge the claim, never the person. Length or confidence
+  is not evidence.
