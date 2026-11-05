@@ -161,10 +161,28 @@ know nothing about each other in code, the link lives in the Inspector, so it is
 - **-** The director asked whether a very active commenter really understands the topic. Not
   judged (the comments were not sent); judge the claims, not the person.
 
-## Module 2, lesson 3 - Delegates, Actions and Events (in progress)
+## Module 2, lesson 3 - Delegates, Actions and Events
 
-Same sample scripts (Health, Level, Debugger). Comments arrived first; the lesson content is
-still to come, so nothing is sorted yet.
+Same sample scripts (Health, Level, Debugger). Lesson content:
+`GetComponent<Level>().onLevelUp.AddListener(ResetHealth)` in `Health.Start` - pass the method
+without `()` (with `()` it would be called right away and its result passed); AddListener adds a
+non-persistent listener (not shown in the Inspector); `RemoveAllListeners`; a C# event
+`public event Action onLevelUpAction;` raised next to the UnityEvent, guarded by an `if` against
+null. Challenge: unsubscribe in `OnDisable` with `-=` and check in game.
+
+Sorted:
+- **S** `AddListener(ResetHealth)` vs `ResetHealth()` is the same idea as the challenge 1.7 gap
+  (`ammo` vs `ammo.GetRoundsLeft()`): naming a thing vs calling it. Added to the skill-gap row.
+- **N** Already in `GAMEDEVNOTES.md` (UML -> C# event table, `-=` in `OnDisable`). New point
+  added: `RemoveAllListeners` also removes other scripts' listeners, and without the `event`
+  keyword any script can `=` over or invoke a delegate.
+- **P** Outer Lands already raises its events with `?.Invoke()` (the short form of the `if`)
+  and subscribes in `OnEnable` / unsubscribes in `OnDisable`.
+- **Q** Backlog: method group vs call; what `event` forbids; why subscribe in `OnEnable`, not
+  `Start`.
+- Challenge progress: (2026-11-05) skeleton with blanks given.
+
+Comments (sorted with the lesson):
 
 Comments (raw, to sort with the lesson):
 - JimmyZ / Brian: `public event Action` belongs to one instance (subscribe to *that*
@@ -205,4 +223,8 @@ Comments (raw, to sort with the lesson):
 - UML: which part of the Observer diagram is `+=` / `-=` / `?.Invoke()` / the subscribed
   method? (Easy, with `Stamina` + `StaminaBar` as the code)
 - Rampage: why does the naive version change every time Health or the UI changes? (Easy)
+- `AddListener(ResetHealth)` vs `AddListener(ResetHealth())` - which one compiles, and what
+  would the second one do? (Medium)
+- Without the `event` keyword: what can another script do to `OnEnemySpawned`? (Medium)
+- You disable `Health` and enable it again: why subscribe in `OnEnable` rather than `Start`? (Medium)
 - Lab idea: a "stale cache" toggle in the Combat Lab (cache `moveSpeed` in Start vs read it live).

@@ -680,6 +680,11 @@ Both are the Observer pattern. They differ in where the link between subject and
 | Unsubscribe | Unity handles it | you must `-=` in `OnDisable` |
 | Good for | one-off scene reactions a designer wires (trigger -> sound, door) | systems: health, stamina, enemies |
 
+Two traps: `RemoveAllListeners()` removes every code listener, including other scripts' ones.
+Remove only your own with `RemoveListener(ResetHealth)` / `-=`. And declare C# events with the
+`event` keyword. A bare `public static Action OnEnemySpawned` lets any script `=` over all
+subscribers or raise it, while `event` allows outsiders only `+=` and `-=`.
+
 Most LuaLander bugs were scene wiring, and a UnityEvent is scene wiring. Use it where a
 non-programmer would want to change the reaction, and keep game systems on C# events.
 
