@@ -112,6 +112,12 @@ Challenge progress:
    Result: `ammo`, `gun`, `RedrawUI()`. Picked the right neighbour each time, but returned the
    object instead of calling its method (`ammo` vs `ammo.GetRoundsLeft()`), and called the UI's
    own method on the player. Shown the full answer; waiting for the instructor's solution.
+3. Instructor's solution: `GunUI.RedrawUI(Gun gun)` gets the gun as a parameter from
+   `PlayerUI` (`gunUI.RedrawUI(player.gun)`), so only one `FindGameObjectWithTag` is left;
+   `Gun.GetRoundsLeft()` returns `ammo.roundsLeft`. Ours went through `Player.GetRoundsLeft()`
+   and made `roundsLeft` private. The instructor's version also removes the duplicate search;
+   ours hides more of the data. Comments: make fields private + `[SerializeField]`; LINQ and
+   fluent APIs are the deliberate exception to "no chains".
 
 ## Outside the course
 
@@ -134,4 +140,8 @@ Challenge progress:
 - Platypus: with Mammal/Reptile classes, why can't it exist? Which components does it get? (Easy)
 - Outer Lands: a bush has health but never moves - which components does it need, and
   what would a `Character` base class force on it? (Easy)
+- `return ammo;` in a method that returns `int` - what does the compiler say, and what is the fix?
+  (Medium, from challenge 1.7)
+- Law of Demeter: which of three lines reaches through objects (`player.gun.ammo.roundsLeft`,
+  `gun.GetRoundsLeft()`, `transform.position.x`)? (Easy - the last one is a value, fine)
 - Lab idea: a "stale cache" toggle in the Combat Lab (cache `moveSpeed` in Start vs read it live).

@@ -630,6 +630,9 @@ laws. Rules 1 and 6 in particular need the caveat.
 10. **Law of Demeter: talk to friends, not friends of friends.**
     `(currentActiveWeapon as IWeapon).GetWeaponInfo().weaponDamage` reaches three objects deep.
     Asking the weapon for `GetDamage()` keeps callers from breaking when `WeaponInfo` changes.
+    Exceptions: APIs built for chaining (LINQ, fluent builders), and reading plain values
+    such as `transform.position.x`. Pass a dependency in as a parameter
+    (`RedrawUI(Gun gun)`) instead of having every script search the scene for it.
 
 ### What to cache (and what goes stale)
 
