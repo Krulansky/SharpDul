@@ -87,6 +87,22 @@ With components (`MilkMakingComponent`, `EggLayingComponent`) each animal picks 
   know). Explained: the break is something with only part of `Character`, like a bush (health,
   no move, no attack) or a turret (attack, no move).
 
+## Lesson 1.7 - Law (guideline) of Demeter
+
+Slides: `enemy.GetCurrentTarget().GetHealthComponent().DoDamage()` vs
+`enemy.DoDamageToCurrentTarget()`. Challenge "What's wrong with this picture?": `PlayerUI` and
+`GunUI` each `FindGameObjectWithTag("Player").GetComponent<Player>()`, then read
+`player.health` and `player.gun.ammo.roundsLeft`; `Player`, `Gun` and `Ammo` expose public fields.
+
+- **Challenge:** the director finds the problem and fixes it. The agent gives hints only, with
+  two attempts before the instructor's solution is posted. Progress is kept below.
+- **P** Outer Lands: `(currentActiveWeapon as IWeapon).GetWeaponInfo().weaponDamage` in
+  `DamageSource` is the same chain (already a refactor candidate in its `CLAUDE.md`).
+
+Challenge progress:
+1. (2026-11-05) Attempt 1 - hints given: count the dots, what GunUI must know, what is
+   duplicated, who may change the public fields.
+
 ## Outside the course
 
 - **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
