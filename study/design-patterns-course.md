@@ -109,6 +109,9 @@ Challenge progress:
    so show the line and give blanks.
 2. Attempt 2 - fill-in skeleton: private `roundsLeft`, `GetRoundsLeft()` passed up through
    Ammo -> Gun -> Player, GunUI calls one method.
+   Result: `ammo`, `gun`, `RedrawUI()`. Picked the right neighbour each time, but returned the
+   object instead of calling its method (`ammo` vs `ammo.GetRoundsLeft()`), and called the UI's
+   own method on the player. Shown the full answer; waiting for the instructor's solution.
 
 ## Outside the course
 
