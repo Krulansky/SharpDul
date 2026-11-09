@@ -813,3 +813,19 @@ never in question, and early tests with other cameras "never felt like Diablo".
   <https://gamebanshee.com/ku6qf>
 - Unity, Cinemachine Follow:
   <https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineFollow.html>
+
+### Upper-body melee layers need a full-body comparison (2026-11-09)
+
+**Experiment:** Sparkan kept locomotion on the base layer and moved three sword
+attacks to an upper-body override mask, with movement at 50% speed.
+The director accepted walking for now but rejected the attack feel: awkward wrist
+and grip, distracting free-arm motion on attacks two and three, and insufficient
+whole-body anticipation and weight transfer.
+
+**Lesson:** judge anticipation across hips, shoulders and legs, not just the weapon
+arm. Before editing source clips, compare the original full-body animation with the
+masked and retargeted result. Loss of lower-body contribution is a hypothesis here,
+not a confirmed cause; socket alignment and retargeting also need inspection.
+Damage after the layer change has not yet been confirmed.
+
+**Source:** Sparkan director's play review, 2026-11-09; Sparkan/ANIMATION_GUIDE.md.
