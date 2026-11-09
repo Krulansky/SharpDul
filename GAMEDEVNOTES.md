@@ -688,3 +688,128 @@ subscribers or raise it, while `event` allows outsiders only `+=` and `-=`.
 Most LuaLander bugs were scene wiring, and a UnityEvent is scene wiring. Use it where a
 non-programmer would want to change the reaction, and keep game systems on C# events.
 
+
+## Sparkan: lessons from the first 3D melee prototype (2026-10-17 to 2026-10-18)
+
+**Source:** Sparkan (`github.com/Krulansky/Sparkan`), an endless survival brawler. A Spartan
+with a sword fights waves of enemies that keep getting stronger. It is the third training game
+and the first one in 3D. Unity 6000.3.14f1 URP, built through a Claude session without Unity
+MCP: the agent writes files, the director clicks a `Sparkan` menu item, and the agent reads
+`Editor.log`.
+
+### Attach a held weapon from the hand's bones, not from a guessed angle
+
+**What:** we placed the sword with a socket under `mixamorig:RightHand`. Two guessed fixed
+rotations both failed: first the blade went into the body, then it stuck out backwards.
+What worked was computing the grip from the skeleton:
+- **Blade direction** = from the pinky knuckle to the index knuckle (`RightHandPinky1` ->
+  `RightHandIndex1`). This is how a handle lies across a closed fist.
+- **Roll** puts the cross-guard along the fingers, so the edges face forward and back.
+- **Grip point** = 60 % of the way from the wrist to the middle knuckle.
+- The sword's own blade axis is **measured** from its mesh bounds: the longest axis, signed
+  toward the far end from the grip pivot. How the FBX was rotated on import no longer matters.
+
+**Why it works:** the bones already say where the palm is, in whatever pose the model was
+exported. A guessed angle bakes in an assumption about the bind pose and the FBX axes, and
+either one can be wrong.
+
+**Related:** "A model's up axis is a measurement, not a convention" (above). This is the same
+lesson applied to a prop in a hand. When exporting a weapon from Blender, put the **pivot in the
+middle of the grip**. We did it with `blender -b file.blend --python export.py` without saving
+the .blend: the script takes the bounding box of the hilt material's faces.
+
+### A first-import rule can miss the very import it was written for
+
+**What:** an `AssetPostprocessor` that sets defaults only when `importSettingsMissing` is true
+(so later Inspector changes survive) did nothing for the files copied in **together with it**.
+Unity imported the FBX files before the new editor script was compiled. The Mixamo idle came in
+as a non-looping clip named `mixamo.com`, and the sword kept its Blender -90 degree root
+rotation.
+
+**Fix that worked:** a `Sparkan > Reapply Import Rules` menu sets a static `forceRules` flag
+and re-imports `Assets/Art` with `ForceUpdate`. Or add the postprocessor first, wait for the
+compile, and only then copy the assets.
+
+**Two traps behind it:**
+- Every Mixamo clip is named `mixamo.com`. Rename it to the file name in
+  `OnPreprocessAnimation`.
+- Renaming a clip changes its sub-asset id, so an Animator Controller that pointed at the old
+  name loses the motion. Regenerate the controller afterwards.
+
+### Humanoid retargeting lets you mix animation packs from different rigs
+
+**What:** the character was rigged by Mixamo (`mixamorig:*`). The sword-combat pack uses a
+Blender rig (`spine.001`, `upper_arm.L`, IK controls). If **both** are imported as
+`Humanoid`, each with its own avatar (`Create From This Model`), the pack's clips play on
+the Mixamo character with no conversion at all.
+
+**Check it:** read the auto-mapping in Rig > Configure (ours mapped `spine.006` as
+*RightEye*, which is harmless). An editor menu (`Sparkan > Diagnose Animations`) logs every
+model's avatar validity, its arm and hand mapping, and each clip's length and loop flag. It
+answered in one click what screenshots could not.
+
+**Failed hypothesis worth remembering:** a mostly static combat idle ("only sways, arms
+stiff") looked like a broken retarget. It was not. In Blender, the pack's attack clips moved
+the hand 2.6 m. The idle was just a sword-ready stance with very little motion. Check the
+source clip in Blender or in the Animation preview before blaming the import.
+
+### When you cannot see the screen, make the game write down what happened
+
+**What:** to debug "the attack does nothing", a small `AnimatorStateLogger` logged every
+mouse press and every Animator state change (`Locomotion -> Attack_1 -> Attack_2`). The log
+proved at once that the combo worked, so the problem was elsewhere: the sword was not visible
+the way we expected.
+
+**Failed experiment:** before reading the log, the agent decided from a screenshot that the
+sword was 100x too small (Mixamo bones in centimetres). The log later printed
+`hand lossyScale = (1, 1, 1)`. The theory was wrong and it cost the director a round trip.
+**Label a hypothesis as a hypothesis, and get the number before you act on it.**
+
+### Melee hitbox: an overlap query in an animation window beats a trigger
+
+**What:** `SwordHitbox` runs `Physics.OverlapBoxNonAlloc` every frame around the blade, but
+only during part of the attack: the state is tagged `Attack` and `normalizedTime` is between
+0.2 and 0.7. A `HashSet<Health>` per swing makes each swing hit a target at most once.
+
+**Why it works:** no Rigidbody on the sword and no trigger setup. It also avoids the classic
+trigger miss: an enemy that is already inside the blade when the swing starts never fires
+`OnTriggerEnter`. It is the 3D version of "skip the list and query the area" (see *What to
+cache*). The window is a stand-in for Animation Events, which can replace it later per clip.
+
+**Feedback that sold the first kill:** a 0.1 s white `HitFlash` through a
+`MaterialPropertyBlock` (it does not create a new material instance), and the enemy tipping
+over on death. Small and separate, as in section 4.
+
+### Design: never lock the player in place in a crowd game
+
+**What:** with the full-body attack clips, the Spartan could not move during a combo. The
+director felt it on the first test: "another enemy can hit me and I have no way to avoid it".
+In a survival game with many enemies, a long lock-in turns a combo into a trap.
+
+**Standard fixes (planned):**
+- **Upper-body attack layer:** an Animator layer with an Avatar Mask for the torso and arms.
+  The legs stay on locomotion, and movement during a swing is only slowed, not zeroed.
+- A **dash / dodge** with a short invulnerability window (i-frames) and a cooldown, as an
+  escape from a crowd.
+
+**Process lesson:** test the fight against **one** enemy (a `singleEnemyTest` switch on the
+spawner) until hitting and killing work. Waves only hide what is broken.
+
+### Camera reference: how Diablo III frames a fight
+
+**What:** a fixed isometric view from above that follows the hero but **never rotates** when
+the hero turns, so the player always sees everything around them. Blizzard says the angle was
+never in question, and early tests with other cameras "never felt like Diablo".
+
+**Plan for Sparkan (Cinemachine 3):**
+- `CinemachineFollow` with Binding Mode **World Space** and a fixed rotation.
+- About 0.5-0.8 s of position damping while walking, for a soft delay.
+- Damping dropped to about 0.05-0.1 s while an attack plays, so the camera snaps onto the
+  action, then eased back.
+- Later, Cinemachine Impulse for screen shake.
+
+**Sources:**
+- GameBanshee Diablo III interviews: <https://www.gamebanshee.com/kf4x>,
+  <https://gamebanshee.com/ku6qf>
+- Unity, Cinemachine Follow:
+  <https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineFollow.html>
