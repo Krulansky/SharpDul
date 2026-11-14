@@ -19,7 +19,7 @@ Course projects use the course's Unity version; own games use `6000.3.14f1`.
 | When | Project | Target |
 |---|---|---|
 | end of November 2026 | Outer Lands | one full playable level |
-| end of 2026 | FerryHeist | finished |
+| end of 2026 | FerryHeist | the basic crossing done; the Kraken maybe (not the whole game) |
 | Q1 2027 (Jan-Mar) | **Riddle of Steel** | full playable level demo; it is the Q1 "new small game" |
 
 ## Blender / 3D art track (added 2026-11-14)

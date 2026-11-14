@@ -8,7 +8,7 @@ This file collects what the courses add to it until work starts.
 ## Status
 
 **The main game for Q1 2027** (director, 2026-11-14): goal is a full playable level demo by the
-end of March 2027. Work starts after Outer Lands (end of November) and FerryHeist (end of 2026).
+end of March 2027. Work starts after Outer Lands (end of November) and FerryHeist's basic crossing (end of 2026).
 
 ## From the Design Patterns course
 
