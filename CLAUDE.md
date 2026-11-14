@@ -7,6 +7,8 @@ learns something that would apply to any game, add an entry there. `knowledge/` 
 about one source project each. This file is in the repository on purpose:
 it is the only context that reaches every machine. Do not rely on memory from other sessions.
 
+**Career goals and plans** (vision, yearly and quarterly goals, deadlines) are in the director's **private** repo `Krulansky/Compass`. Read it when it is attached to the session; never copy its content into this repository.
+
 ## Course material the director sends
 
 Screenshots, lecture notes and comment threads from a course go through the **study inbox**:
