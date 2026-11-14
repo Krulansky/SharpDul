@@ -214,7 +214,8 @@ will ask when to build it. The director's own exercise files live in their repo
 ## Outside the course
 
 - **P** Outer Lands issue #1 (sword slash VFX, 5 tips): planned in its `ROADMAP.md` as the
-  **Scythe** right after Elevation (director, 2026-11-04). It is a learning project and the
+  **Scythe**; moved to the next patch on 2026-11-14 (with the Demon Form fear), to fit the
+  end-of-November level. It is a learning project and the
   first practical step towards the Shaders/VFX study phase.
 
 ## Quiz and Lab backlog (bucket Q)
